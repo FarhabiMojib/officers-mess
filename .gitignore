@@ -1,0 +1,16 @@
+# Firebase local cache & logs
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+.firebaserc
+
+# Database backups & sensitive exports
+*backup*.json
+*.csv
+.env
+.env.*
+
+# Dependencies & OS files
+node_modules/
+.DS_Store
+Thumbs.db

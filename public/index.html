@@ -1,0 +1,3192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Officers' Mess Live</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Officers' Mess">
+<meta name="theme-color" content="#1a2530">
+
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'><rect width='512' height='512' rx='115' fill='%231a2530'/><path d='M256 70 L380 120 V250 C380 340 256 420 256 420 C256 420 132 340 132 250 V120 Z' fill='none' stroke='%23d4af37' stroke-width='22'/><circle cx='256' cy='220' r='55' fill='none' stroke='%23d4af37' stroke-width='16'/><path d='M215 310 Q256 290 297 310 L256 370 Z' fill='%23d4af37'/></svg>">
+
+<script src="/__/firebase/8.10.1/firebase-app.js"></script>
+<script src="/__/firebase/8.10.1/firebase-database.js"></script>
+<script src="/__/firebase/init.js"></script>
+
+<style>
+  :root { --primary: #1a2530; --gold: #c59b27; --accent: #007aff; --bg: #f2f2f7; --card: #ffffff; --text: #1c1c1e; --text-muted: #8e8e93; --border: #e5e5ea; --success: #34c759; --danger: #ff3b30; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 0; padding-top: env(safe-area-inset-top); }
+  
+  body:not(.is-admin) .admin-only { display: none !important; }
+
+  #toast { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; border: 1px solid var(--gold); padding: 12px 24px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.25); z-index: 3000; font-weight: 600; font-size: 0.9rem; transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; text-align: center; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #toast.show { top: calc(20px + env(safe-area-inset-top)); }
+
+  #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--primary); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; color: white; padding: 20px; }
+  .login-box { background: white; color: var(--text); padding: 30px; border-radius: 16px; width: 100%; max-width: 340px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+  .login-box h2 { margin-top: 0; color: var(--primary); font-size: 1.4rem; }
+  .pin-input { font-size: 24px; letter-spacing: 5px; text-align: center; padding: 15px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #ccc; width: 100%; transition: 0.3s; }
+  .pin-input:disabled { background: #eee; color: #999; }
+  
+  #appContainer { display: none; padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+  header { background: var(--primary); color: white; padding: 14px 20px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.15); display: flex; justify-content: space-between; align-items: center; }
+  header h1 { margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; } header h1 span { color: var(--gold); }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; box-shadow: 0 0 6px var(--success); }
+  .logout-btn { background: rgba(255,255,255,0.15); border: none; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+  
+  .container { max-width: 600px; margin: 0 auto; padding: 15px; }
+  .tab-pane { display: none; } .tab-pane.active { display: block; animation: fadeIn 0.15s ease-in; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  
+  .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+  .stat-card { background: var(--card); padding: 14px; border-radius: 14px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+  .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
+  .stat-val { font-size: 1.25rem; font-weight: 700; } .stat-val.rate { color: var(--accent); } .stat-val.gold { color: var(--gold); }
+  
+  .card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 14px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+  .card-title { font-size: 1rem; font-weight: 700; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; color: var(--primary); }
+  
+  .form-group { margin-bottom: 12px; } label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 5px; }
+  input, select { width: 100%; padding: 12px; font-size: 16px; border: 1px solid var(--border); border-radius: 10px; background: white; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  
+  .btn { display: inline-flex; align-items: center; justify-content: center; width: 100%; padding: 12px; font-size: 16px; font-weight: 600; border-radius: 10px; border: none; cursor: pointer; transition: opacity 0.15s; }
+  .btn:active { opacity: 0.75; }
+  .btn-primary { background: var(--accent); color: white; } .btn-dark { background: var(--primary); color: white; } .btn-gold { background: var(--gold); color: white; } .btn-danger { background: var(--danger); color: white; } .btn-success { background: var(--success); color: white; }
+  .btn-sm { width: auto; padding: 6px 11px; font-size: 0.78rem; border-radius: 7px; }
+  
+  .search-bar { width: 100%; padding: 11px 14px; font-size: 0.95rem; border: 1px solid var(--border); border-radius: 10px; background: var(--card); margin-bottom: 12px; }
+
+  .member-card { background: var(--card); border-radius: 14px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+  .member-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .member-name { font-size: 1.05rem; font-weight: 700; display:flex; align-items:center; gap:6px; flex-wrap:wrap; color: var(--primary); }
+  .member-id-badge { font-size: 0.7rem; background: var(--bg); padding: 2px 6px; border-radius: 4px; color: var(--text-muted); font-weight: 600; }
+  .member-balance { font-weight: 800; font-size: 1rem; } .balance-positive { color: var(--success); } .balance-negative { color: var(--danger); }
+  .member-sub { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5; }
+  .member-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  
+  .meal-date-picker { background: var(--primary); color: white; padding: 12px; border-radius: 10px; text-align: center; font-weight: bold; margin-bottom: 15px; width: 100%; font-size: 1.05rem; border: none; }
+  .meal-board-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+  .meal-toggle { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; font-size: 0.75rem; font-weight: 600; transition: 0.2s; user-select: none; }
+  .meal-toggle.on { background: var(--success); color: white; border-color: var(--success); } .meal-toggle.disabled { opacity: 0.4; cursor: not-allowed; border-color: transparent; }
+  .guest-input-wrap { display: flex; align-items: center; justify-content: space-between; background: var(--bg); padding: 8px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; margin-top: 8px; }
+  .guest-input { width: 44px; text-align: center; padding: 4px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; }
+  .guest-input:disabled { opacity: 0.4; cursor: not-allowed; background: #eaeaea; }
+  
+  /* Ledger & Prep Styles */
+  .ledger-item, .expense-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .ledger-item:last-child, .expense-item:last-child { border-bottom: none; }
+  .ledger-desc { font-weight: 600; font-size: 0.95rem; margin-bottom: 3px; } .ledger-sub { font-size: 0.75rem; color: var(--text-muted); display: flex; gap: 8px; align-items: center; }
+  .ledger-amt { font-weight: 700; font-size: 1rem; } .amt-pos { color: var(--success); } .amt-neg { color: var(--danger); }
+  .cat-badge { background: #e5e5ea; color: #333; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+  
+  nav.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 6px 0; padding-bottom: max(6px, env(safe-area-inset-bottom)); z-index: 200; }
+  .nav-btn { background: none; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; font-size: 0.65rem; font-weight: 600; gap: 3px; cursor: pointer; padding: 0 4px; }
+  .nav-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; } .nav-btn.active { color: var(--accent); }
+  
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 500; } .modal-overlay.active { display: flex; }
+  .modal-body { background: white; border-radius: 16px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; padding: 20px; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; } .modal-title { font-size: 1.15rem; font-weight: 700; }
+  .modal-close { background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; line-height: 1; }
+  
+  /* Print Engine Styles (6 per Legal Page) */
+  #receiptContent { background: transparent; border: none; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #111; }
+  .bulk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .bulk-bill { height: 4.1in; border: 1.5px dashed #555; border-radius: 8px; padding: 14px 16px; box-sizing: border-box; font-size: 12px; background: #fff; page-break-inside: avoid; break-inside: avoid; display: flex; flex-direction: column; justify-content: space-between; }
+  .single-bill-wrap .bulk-bill { width: 100%; max-width: 400px; margin: 0 auto; height: auto; min-height: 3.8in; }
+  .page-break { page-break-after: always; break-after: page; width: 100%; height: 0; display: block; border: none; margin: 0; padding: 0; }
+  .receipt-center { text-align: center; margin-bottom: 4px; } 
+  .receipt-title { font-size: 1.15rem; font-weight: 800; letter-spacing: 0.8px; color: #000; }
+  .receipt-subtitle { font-size: 0.72rem; font-weight: 700; letter-spacing: 1.5px; color: #444; margin-top: 2px; text-transform: uppercase; }
+  .receipt-period { font-size: 0.72rem; color: #333; margin-top: 3px; }
+  .receipt-row { display: flex; justify-content: space-between; align-items: baseline; padding: 3px 0; font-size: 0.8rem; } 
+  .receipt-divider { border-bottom: 1px dashed #888; margin: 5px 0; }
+  .receipt-status-box { border: 1.5px solid #111; border-radius: 6px; padding: 6px 10px; margin-top: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; font-weight: 800; background: #f8f9fa; }
+  .receipt-footer { text-align: center; font-size: 0.66rem; color: #555; font-style: italic; padding-top: 6px; border-top: 1px dotted #ccc; margin-top: 6px; }
+  
+  @media (max-width: 500px) { .bulk-grid { grid-template-columns: 1fr; } }
+
+  @media print { 
+    @page { size: legal portrait; margin: 0.35in 0.4in; }
+    body { background: #fff !important; padding: 0 !important; margin: 0 !important; }
+    #appContainer, #loginScreen, #toast { display: none !important; }
+    .modal-overlay { display: none !important; }
+    #receiptModal.modal-overlay.active { display: block !important; position: static !important; background: none !important; padding: 0 !important; margin: 0 !important; }
+    #receiptModal .modal-body { box-shadow: none !important; max-width: none !important; width: 100% !important; max-height: none !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; background: transparent !important; border-radius: 0 !important; }
+    .modal-header, .modal-close, .no-print { display: none !important; }
+    #receiptContent { position: static !important; width: 100% !important; }
+    .bulk-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 12px !important; margin-bottom: 0 !important; }
+    .bulk-bill { height: 4.1in !important; border: 1.2px dashed #444 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .single-bill-wrap .bulk-bill { max-width: 3.8in !important; margin: 0 auto !important; }
+  }
+</style>
+</head>
+<body>
+
+  <div id="toast">🔔 Notification</div>
+
+    <div id="loginScreen">
+    <div style="margin-bottom: 20px; text-align:center;">
+      <h1 style="margin:0; font-size: 2.2rem;"><span>🛡️</span></h1>
+      <h2 style="margin:5px 0 0; font-size: 1.25rem; font-weight:700; letter-spacing: 1.5px;">OFFICERS' MESS</h2>
+    </div>
+    <div class="login-box">
+      <h2 id="loginTitle">Connecting...</h2>
+      <p style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">Establishing secure cloud link</p>
+      <div id="loginForm" style="display:none;">
+        <input type="password" id="loginPin" class="pin-input" placeholder="••••" inputmode="numeric" onkeydown="if(event.key==='Enter') handleLogin()">
+        <div style="margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <input type="checkbox" id="keepLoggedIn" checked style="width: auto; padding: 0; margin: 0; transform: scale(1.2);">
+          <label for="keepLoggedIn" style="margin: 0; font-size: 0.9rem; font-weight: normal; color: #555;">Keep me logged in</label>
+        </div>
+        <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">Login</button>
+        <p style="font-size: 0.75rem; color: #888; margin-top: 15px;">Enter Admin PIN, Member ID, or Kitchen PIN</p>
+        <p id="loginError" style="color:var(--danger); font-size:0.85rem; margin-top:10px; display:none; font-weight:600;">Invalid PIN or Member ID.</p>
+      </div>
+      <div id="adminVerifyBox" style="display:none;">
+        <p id="adminVerifyMsg" style="font-size:0.85rem; color:#444; margin-top:0; margin-bottom:14px; line-height:1.45;"></p>
+        <div id="totpVerifyWrap">
+          <input type="text" id="loginTotpCode" class="pin-input" placeholder="000000" maxlength="6" inputmode="numeric" onkeydown="if(event.key==='Enter') verifyAdminSecondFactor()">
+          <div style="margin-bottom: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <input type="checkbox" id="trustThisDevice" checked style="width: auto; padding: 0; margin: 0; transform: scale(1.2);">
+            <label for="trustThisDevice" style="margin: 0; font-size: 0.85rem; font-weight: normal; color: #555;">Trust this device</label>
+          </div>
+          <button class="btn btn-primary" onclick="verifyAdminSecondFactor()">Verify &amp; Login</button>
+        </div>
+        <div id="deviceWaitWrap" style="display:none;">
+          <button class="btn btn-gold" onclick="requestAdminDeviceApproval()">Send Device Approval Request</button>
+          <p id="deviceWaitStatus" style="font-size:0.8rem; color:var(--accent); margin-top:10px; font-weight:600;"></p>
+        </div>
+        <button class="btn" style="margin-top:10px; background:#e5e5ea; color:#333;" onclick="cancelAdminVerify()">Back</button>
+        <p id="verifyError" style="color:var(--danger); font-size:0.85rem; margin-top:10px; display:none; font-weight:600;"></p>
+      </div>
+    </div>
+  </div>
+
+    <div id="appContainer">
+    <header>
+      <h1><span>🛡️</span> OFFICERS' MESS</h1>
+      <div class="header-right">
+        <span class="sync-dot" title="Live Cloud Sync Active"></span>
+        <button class="logout-btn" onclick="logout()">Log Out</button>
+      </div>
+    </header>
+    <div class="container">
+      
+            <div id="tab-dashboard" class="tab-pane active">
+        <div style="background:var(--primary); color:white; padding:16px; border-radius:14px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h2 style="margin:0; font-size:1.15rem;" id="welcomeMsg">Welcome</h2>
+            <div style="font-size:0.82rem; opacity:0.85; margin-top:4px;">Active Period: <strong id="dispMonthTitle"></strong> (Since <span id="dispMonthStart"></span>)</div>
+          </div>
+        </div>
+
+        <div id="dashPendingDeviceRequests" class="admin-only" style="display:none; margin-bottom:15px;"></div>
+        <div id="dashPendingDeposits" class="admin-only" style="display:none; margin-bottom:15px;"></div>
+        <div id="dashPendingMenuRequests" class="admin-only" style="display:none; margin-bottom:15px;"></div>
+        <div id="dashMenuNoticeCard" style="display:none; margin-bottom:15px;"></div>
+        <div id="dashPersonalSummary" style="display:none; margin-bottom:15px;"></div>
+
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">Current Meal Rate</div><div class="stat-val rate">৳<span id="dashMealRate">0.00</span></div></div>
+          <div class="stat-card"><div class="stat-label">Period Expenses</div><div class="stat-val">৳<span id="dashTotalExp">0</span></div></div>
+          <div class="stat-card"><div class="stat-label">Period Meals</div><div class="stat-val" id="dashTotalMeals">0</div></div>
+          <div class="stat-card"><div class="stat-label">Total Egg Sales</div><div class="stat-val gold">৳<span id="dashTotalEggCost">0</span></div></div>
+        </div>
+        <div class="card admin-only">
+          <div class="card-title">Update Menu &amp; Notice Board</div>
+          <div class="grid-2">
+            <div class="form-group"><label>Menu Date</label><input type="date" id="menuDateInput"></div>
+            <div class="form-group"><label>Mess Notice (Optional)</label><input type="text" id="menuNoticeInput" placeholder="e.g., Special Dinner at 8:30 PM"></div>
+          </div>
+          <div class="grid-3">
+            <div class="form-group"><label>Breakfast</label><input type="text" id="menuBInput" placeholder="e.g., Paratha, Egg"></div>
+            <div class="form-group"><label>Lunch</label><input type="text" id="menuLInput" placeholder="e.g., Rice, Fish, Dal"></div>
+            <div class="form-group"><label>Dinner</label><input type="text" id="menuDInput" placeholder="e.g., Khichuri, Beef"></div>
+          </div>
+          <button class="btn btn-dark" onclick="saveMenuNotice()">Save Menu &amp; Notice</button>
+        </div>
+        <div class="card admin-only">
+          <div class="card-title">Admin Quick Settings</div>
+          <div class="grid-2">
+            <div class="form-group"><label>Mess Title</label><input type="text" id="messMonth" onchange="adminSaveSettings()"></div>
+            <div class="form-group"><label>Egg Price (৳)</label><input type="number" id="eggPriceInput" step="0.5" min="0" onchange="adminSaveSettings()"></div>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Period Start Date</label>
+            <input type="date" id="monthStartInput" onchange="adminSaveSettings()">
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Live Mess Fund Status</div>
+          <div class="receipt-row" style="font-size:0.9rem;"><span>Total Available Deposits:</span> <strong>৳<span id="dashTotalDeposits">0</span></strong></div>
+          <div class="receipt-row admin-only" style="font-size:0.9rem; margin-top:4px;"><span>Current Bank/Cash Balance:</span> <strong style="color:var(--accent);">৳<span id="dashMessBalance">0</span></strong></div>
+        </div>
+      </div>
+      
+            <div id="tab-daily" class="tab-pane">
+        <div id="dailyMenuBanner" style="display:none; margin-bottom:12px;"></div>
+        <div id="dailyMenuRequestBtnWrap" style="display:none; margin-bottom:12px;">
+          <button class="btn btn-gold" onclick="openMenuRequestModal()">🍽️ Request Preferred Meal</button>
+        </div>
+        <input type="date" id="boardDate" class="meal-date-picker" onchange="renderMealBoard()">
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-5px; margin-bottom:15px; text-align:center;">
+          Tap any meal below to override for the selected date.<br>
+          <span style="color: var(--danger); font-weight:600;">Same-day meal &amp; guest cutoffs (no changes after): Breakfast 5:00 AM &bull; Lunch 10:00 AM &bull; Dinner 5:00 PM</span>
+        </p>
+        <div id="mealBoardList"></div>
+      </div>
+
+            <div id="tab-cook" class="tab-pane">
+        <div style="background:var(--primary); color:white; padding:15px; border-radius:12px; margin-bottom:15px; text-align:center;">
+          <h2 style="margin:0; font-size:1.1rem;">রান্নাঘর ও মিল প্রস্তুতি ড্যাশবোর্ড</h2>
+        </div>
+        <div id="cookMenuNoticeCard" style="display:none; margin-bottom:14px;"></div>
+        <div class="grid-2" style="margin-bottom:10px;">
+          <button class="btn btn-sm" id="btnCookToday" style="padding:10px; background:var(--primary); color:white;" onclick="setCookDateOffset(0)">আজ</button>
+          <button class="btn btn-sm" id="btnCookTomorrow" style="padding:10px; background:#e5e5ea; color:#333;" onclick="setCookDateOffset(1)">আগামীকাল</button>
+        </div>
+        <input type="date" id="cookDate" class="meal-date-picker" onchange="renderCookBoard()">
+        <p style="font-size:0.82rem; color:var(--text-muted); margin-top:-5px; margin-bottom:15px; text-align:center;">
+          নির্বাচিত তারিখের জন্য মোট সক্রিয় মিলের সংখ্যা (অতিথিসহ)।
+        </p>
+        <div class="stats-grid" id="cookSummary" style="grid-template-columns: 1fr 1fr 1fr;"></div>
+        <div class="card">
+          <div class="card-title">অফিসারভিত্তিক মিল ও অতিরিক্ত ডিমের তালিকা</div>
+          <div id="cookList"></div>
+        </div>
+      </div>
+
+            <div id="tab-members" class="tab-pane">
+        <div class="card admin-only">
+          <div class="card-title">Add New Officer</div>
+          <div class="form-group"><input type="text" id="mName" placeholder="Rank & Full Name"></div>
+          <div class="grid-2">
+            <div class="form-group"><label>Initial Deposit (৳)</label><input type="number" id="mDeposit" placeholder="0"></div>
+            <div class="form-group"><label>Past/Legacy Meals</label><input type="number" id="mMeals" placeholder="0" min="0" step="0.5"></div>
+          </div>
+          <div class="form-group"><label>Initial Extra Eggs</label><input type="number" id="mEggs" placeholder="0" min="0"></div>
+          <button class="btn btn-dark" onclick="addMember()">+ Add Officer to Roster</button>
+        </div>
+        
+        <div style="margin: 15px 2px 10px; display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="margin:0; font-size:1.05rem;">Officers' Roster (<span id="rosterCount">0</span>)</h3>
+          <button class="btn btn-sm btn-dark admin-only" onclick="generateBulkReceipts()">🖨️ Print All Bills</button>
+        </div>
+
+        <input type="text" id="memberSearch" class="search-bar" placeholder="🔍 Search officer by name or ID..." oninput="renderAll()">
+        
+        <div id="memberList"></div>
+      </div>
+      
+            <div id="tab-ledger" class="tab-pane">
+        <div class="card" style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; padding:10px 15px; margin-bottom:15px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="font-weight:bold; font-size:0.9rem;">Ledger Month:</div>
+            <input type="month" id="ledgerMonth" class="meal-date-picker" style="width:auto; margin:0; padding:8px;" onchange="renderLedger()">
+          </div>
+          <button class="btn btn-sm btn-dark" onclick="exportMonthlyCSV()">📊 Export CSV</button>
+        </div>
+        
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+          <button class="btn btn-dark" id="btnLedgerExp" onclick="setLedgerView('expenses')">Expense Ledger</button>
+          <button class="btn" style="background:#e5e5ea; color:#333;" id="btnLedgerAcc" onclick="setLedgerView('accounts')">Account Ledger</button>
+        </div>
+
+        <div id="ledgerExpView">
+          <div class="card admin-only">
+            <div class="card-title">Record New Expense</div>
+            <div class="grid-2">
+              <div class="form-group"><input type="date" id="expDate"></div>
+              <div class="form-group">
+                <select id="expCategory">
+                  <option value="Groceries">Groceries / Bazaar</option><option value="Meat">Meat / Poultry</option><option value="Fish">Fish</option><option value="Vegetables">Vegetables</option><option value="Utilities">Utilities / Gas</option><option value="Misc">Miscellaneous</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group"><input type="text" id="expDesc" placeholder="Description (e.g., Rice, Spices, Bazaar)"></div>
+            <div class="form-group"><input type="number" id="expAmount" placeholder="Amount (৳)" min="0" step="0.01"></div>
+            <button class="btn btn-primary" onclick="addExpense()">Save Expense</button>
+          </div>
+          <div class="card"><div class="card-title">Category Summary</div><div id="ledgerCatSummary" class="stats-grid" style="grid-template-columns: 1fr 1fr; margin-bottom:0;"></div></div>
+          <div class="card"><div class="card-title">Monthly Expenses</div><div id="ledgerExpenseList"></div></div>
+        </div>
+
+        <div id="ledgerAccView" style="display:none;">
+          <div class="card admin-only" id="ledgerAdminSelectWrap">
+            <div class="form-group" style="margin:0;"><label>Select Officer to view Ledger:</label><select id="ledgerMemberSelect" onchange="renderLedger()"></select></div>
+          </div>
+          <div class="card"><div class="card-title">Monthly Account Summary</div><div id="ledgerMealSummary"></div></div>
+          <div class="card"><div class="card-title">Transaction Ledger</div><div id="transactionList"></div></div>
+        </div>
+      </div>
+      
+            <div id="tab-settings" class="tab-pane">
+        <div class="card admin-only">
+          <div class="card-title">Security & Access</div>
+          <div class="grid-2">
+            <div class="form-group"><label>Change Admin PIN</label><input type="password" id="newAdminPin" placeholder="New Admin PIN"></div>
+            <div class="form-group"><label>Change Cook PIN</label><input type="password" id="newCookPin" placeholder="New Cook PIN"></div>
+          </div>
+          <button class="btn btn-dark" onclick="changePins()">Update PINs (SHA-256 Hashed)</button>
+        </div>
+
+        <div class="card admin-only">
+          <div class="card-title">Admin 2FA &amp; Trusted Devices</div>
+          <div id="totpSettingsBox" style="margin-bottom:14px;"></div>
+          <div style="font-size:0.82rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Trusted Admin Devices</div>
+          <div id="trustedDevicesList"></div>
+        </div>
+
+        <div class="card admin-only">
+          <div class="card-title">Database Backup &amp; Restore</div>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0;">Download a complete JSON snapshot or restore from a previously saved backup file.</p>
+          <div class="grid-2">
+            <button class="btn btn-primary" onclick="exportBackupJSON()">⬇️ Download Backup (.json)</button>
+            <button class="btn btn-dark" onclick="document.getElementById('restoreJsonFile').click()">⬆️ Restore Backup (.json)</button>
+          </div>
+          <input type="file" id="restoreJsonFile" accept=".json,application/json" style="display:none;" onchange="handleRestoreFile(event)">
+        </div>
+
+        <div class="card admin-only">
+          <div class="card-title">Admin Activity Audit Log</div>
+          <div id="auditLogList" style="max-height:280px; overflow-y:auto;"></div>
+        </div>
+
+        <div class="card admin-only" style="border-color: rgba(255,59,48,0.3);">
+          <div class="card-title" style="color:var(--danger);">Start New Month</div>
+          <p style="font-size:0.85rem; color:var(--text-muted);">Calculates final bills through today, archives the current meal rate and member snapshots, and carries all balances forward starting tomorrow.</p>
+          <button class="btn btn-danger" onclick="resetMonth()">Close Month & Carry Forward</button>
+        </div>
+      </div>
+      
+    </div>
+    
+        <nav class="bottom-nav">
+      <button class="nav-btn" onclick="switchTab('dashboard')" id="navDashboardBtn"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>Dashboard</button>
+      <button class="nav-btn" onclick="switchTab('daily')" id="navDailyBtn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>Meals</button>
+      <button class="nav-btn" onclick="switchTab('cook')" id="navCookBtn"><svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>Prep</button>
+      <button class="nav-btn" onclick="switchTab('members')" id="navMembersBtn"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Officers</button>
+      <button class="nav-btn" onclick="switchTab('ledger')" id="navLedgerBtn"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>Ledger</button>
+      <button class="nav-btn admin-only" onclick="switchTab('settings')" id="navSettingsBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Settings</button>
+    </nav>
+  </div>
+
+    <div id="statusModal" class="modal-overlay">
+    <div class="modal-body">
+      <div class="modal-header"><div class="modal-title">Set Auto-Meals / Guests / Eggs</div><button class="modal-close" onclick="closeModal('statusModal')">&times;</button></div>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0;">Settings apply every day in the selected range. Leave 'End Date' blank to apply <strong>until further notice</strong>.</p>
+      <input type="hidden" id="statusMemberId">
+      <div class="grid-2"><div class="form-group"><label>Start Date</label><input type="date" id="statusStart"></div><div class="form-group"><label>End Date (Optional)</label><input type="date" id="statusEnd" placeholder="Until changed"></div></div>
+      <label style="margin-top:10px;">Officer Meals (ON/OFF):</label>
+      <div class="grid-3" style="margin-bottom:15px; text-align:center;">
+        <div><input type="checkbox" id="statusB" checked> Breakfast</div><div><input type="checkbox" id="statusL" checked> Lunch</div><div><input type="checkbox" id="statusD" checked> Dinner</div>
+      </div>
+      <label>Daily Continuous Guests:</label>
+      <div class="grid-3" style="margin-bottom:15px; text-align:center;">
+        <div><small>B</small> <input type="number" id="statusGB" value="0" min="0" class="guest-input" style="width:100%"></div><div><small>L</small> <input type="number" id="statusGL" value="0" min="0" class="guest-input" style="width:100%"></div><div><small>D</small> <input type="number" id="statusGD" value="0" min="0" class="guest-input" style="width:100%"></div>
+      </div>
+      <label>Daily Continuous Extra Eggs (🥚):</label>
+      <div class="grid-3" style="margin-bottom:20px; text-align:center;">
+        <div><small>B</small> <input type="number" id="statusEB" value="0" min="0" class="guest-input" style="width:100%"></div><div><small>L</small> <input type="number" id="statusEL" value="0" min="0" class="guest-input" style="width:100%"></div><div><small>D</small> <input type="number" id="statusED" value="0" min="0" class="guest-input" style="width:100%"></div>
+      </div>
+      <button class="btn btn-primary" onclick="applyStatus()">Save Auto-Schedule</button>
+      <button class="btn btn-danger" style="margin-top:10px;" onclick="clearAllStatuses()">Reset to Default (All ON)</button>
+    </div>
+  </div>
+
+  <div id="editModal" class="modal-overlay">
+    <div class="modal-body">
+      <div class="modal-header"><div class="modal-title">Edit Officer</div><button class="modal-close" onclick="closeModal('editModal')">&times;</button></div>
+      <input type="hidden" id="editMemberId">
+      <div class="form-group"><label>Name / Rank</label><input type="text" id="editName"></div>
+      <div class="grid-2">
+        <div class="form-group"><label>Legacy/Manual Meals</label><input type="number" id="editMeals" min="0" step="0.5"></div>
+        <div class="form-group"><label>Extra Eggs</label><input type="number" id="editEggs" min="0"></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveMemberEdit()">Save Changes</button>
+    </div>
+  </div>
+  
+  <div id="editExpModal" class="modal-overlay">
+    <div class="modal-body">
+      <div class="modal-header"><div class="modal-title">Edit Expense</div><button class="modal-close" onclick="closeModal('editExpModal')">&times;</button></div>
+      <input type="hidden" id="editExpId">
+      <div class="grid-2">
+        <div class="form-group"><label>Date</label><input type="date" id="eeDate"></div>
+        <div class="form-group"><label>Category</label><select id="eeCategory"><option value="Groceries">Groceries</option><option value="Meat">Meat</option><option value="Fish">Fish</option><option value="Vegetables">Vegetables</option><option value="Utilities">Utilities</option><option value="Misc">Misc</option></select></div>
+      </div>
+      <div class="form-group"><label>Description</label><input type="text" id="eeDesc"></div>
+      <div class="form-group"><label>Amount (৳)</label><input type="number" id="eeAmount" min="0" step="0.01"></div>
+      <button class="btn btn-primary" onclick="saveExpenseEdit()">Save Changes</button>
+    </div>
+  </div>
+
+  <div id="editTxModal" class="modal-overlay">
+    <div class="modal-body">
+      <div class="modal-header"><div class="modal-title">Edit Transaction</div><button class="modal-close" onclick="closeModal('editTxModal')">&times;</button></div>
+      <p style="font-size:0.8rem; color:var(--danger); margin-top:0;">Editing amounts will automatically update the officer's current balance.</p>
+      <input type="hidden" id="editTxId">
+      <div class="form-group"><label>Date</label><input type="date" id="etDate"></div>
+      <div class="form-group"><label>Description</label><input type="text" id="etDesc"></div>
+      <div class="form-group"><label>Amount (৳) (+ for deposit, - for deduct)</label><input type="number" id="etAmount" step="0.01"></div>
+      <button class="btn btn-primary" onclick="saveTxEdit()">Save Changes</button>
+    </div>
+  </div>
+
+  <div id="depositModal" class="modal-overlay">
+    <div class="modal-body">
+      <div class="modal-header"><div class="modal-title">Adjust Deposit</div><button class="modal-close" onclick="closeModal('depositModal')">&times;</button></div>
+      <input type="hidden" id="adjMemberId">
+      <p id="adjMemberName" style="font-weight: 600; margin-top: 0;"></p>
+      <div class="form-group"><label>Amount (৳)</label><input type="number" id="adjAmount" placeholder="Enter amount" min="0" step="0.01"></div>
+      <div class="grid-2">
+        <button class="btn btn-primary" onclick="applyDepositAdjustment('add')">+ Add Deposit</button>
+        <button class="btn btn-danger" onclick="applyDepositAdjustment('sub')">- Deduct</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="requestDepositModal" class="modal-overlay">
+    <div class="modal-body">
+      <div class="modal-header"><div class="modal-title">Request Deposit</div><button class="modal-close" onclick="closeModal('requestDepositModal')">&times;</button></div>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0;">Submit a deposit request. Your balance will update once the Admin approves it.</p>
+      <div class="form-group"><label>Amount (৳)</label><input type="number" id="reqDepAmount" placeholder="Enter amount" min="1" step="0.01"></div>
+      <div class="form-group"><label>Payment Note / Reference (Optional)</label><input type="text" id="reqDepNote" placeholder="e.g., Cash to Clerk, bKash TrxID"></div>
+      <button class="btn btn-primary" onclick="submitDepositRequest()">Send Request to Admin</button>
+    </div>
+  </div>
+
+  <div id="menuRequestModal" class="modal-overlay">
+    <div class="modal-body">
+      <div class="modal-header"><div class="modal-title">Request Preferred Meal</div><button class="modal-close" onclick="closeModal('menuRequestModal')">&times;</button></div>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0;">Suggest a preferred dish for a meal. If approved by Admin, it will be added to the Mess Menu for everyone and the Cook.</p>
+      <div class="grid-2">
+        <div class="form-group"><label>Date</label><input type="date" id="reqMenuDate"></div>
+        <div class="form-group">
+          <label>Meal Slot</label>
+          <select id="reqMenuSlot">
+            <option value="breakfast">Breakfast</option>
+            <option value="lunch" selected>Lunch</option>
+            <option value="dinner">Dinner</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Preferred Dish / Menu</label><input type="text" id="reqMenuDish" placeholder="e.g., Beef Tehari, Khichuri &amp; Egg"></div>
+      <div class="form-group"><label>Note (Optional)</label><input type="text" id="reqMenuNote" placeholder="e.g., Less spicy"></div>
+      <button class="btn btn-primary" onclick="submitMenuRequest()">Send Menu Request to Admin</button>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="modal-overlay">
+    <div class="modal-body" style="max-width: 400px;">
+      <div class="modal-header">
+        <div class="modal-title" id="confirmModalTitle">Confirm Action</div>
+        <button class="modal-close" onclick="closeConfirmModal()">&times;</button>
+      </div>
+      <p id="confirmModalMsg" style="font-size:0.92rem; color:var(--text); line-height:1.45; margin-top:0; margin-bottom:20px; white-space:pre-line;"></p>
+      <div class="grid-2">
+        <button class="btn" style="background:#e5e5ea; color:#333;" onclick="closeConfirmModal()">Cancel</button>
+        <button class="btn btn-danger" id="confirmModalBtn" onclick="executeConfirmedAction()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="receiptModal" class="modal-overlay">
+    <div class="modal-body" style="background:#f2f2f7; max-width: 720px;">
+      <div class="modal-header no-print">
+        <div class="modal-title">Official Mess Bills</div>
+        <button class="modal-close" onclick="closeModal('receiptModal')">&times;</button>
+      </div>
+      <div id="receiptContent"></div>
+      <div class="no-print" style="margin-top: 15px; display:flex; gap:10px;">
+        <button class="btn btn-dark" onclick="window.print()">🖨️ Save as PDF / Print</button>
+        <button class="btn btn-sm" style="background:#e5e5ea; color:#333; padding: 12px 20px;" onclick="closeModal('receiptModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ACTIVE_CACHE_NAME = 'officers-mess-live-v27';
+
+    function safeGetStorage(key) {
+      try { return localStorage.getItem(key); } catch (e) { return null; }
+    }
+    function safeSetStorage(key, val) {
+      try { localStorage.setItem(key, val); } catch (e) {}
+    }
+    function safeRemoveStorage(key) {
+      try { localStorage.removeItem(key); } catch (e) {}
+    }
+
+    (async function cleanLegacyStorageAndCaches() {
+      try {
+        const savedUser = safeGetStorage('messAppUser');
+        const savedToken = safeGetStorage('messAppSessionHash');
+        const savedDevId = safeGetStorage('messAppDeviceId');
+        try { localStorage.clear(); } catch (e) {}
+        if (savedUser !== null) safeSetStorage('messAppUser', savedUser);
+        if (savedToken !== null) safeSetStorage('messAppSessionHash', savedToken);
+        if (savedDevId !== null) safeSetStorage('messAppDeviceId', savedDevId);
+        try { sessionStorage.clear(); } catch (e) {}
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.filter(k => k !== ACTIVE_CACHE_NAME).map(k => caches.delete(k)));
+        }
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const reg of registrations) await reg.update();
+        }
+      } catch (e) { console.warn('Cache check notice:', e); }
+    })();
+    const db = firebase.database();
+    let serverTimeOffsetMs = 0;
+    let lastSyncedTodayStr = '';
+    db.ref('.info/serverTimeOffset').on('value', (snap) => {
+      const newOffset = Number(snap.val()) || 0;
+      if (newOffset !== serverTimeOffsetMs) {
+        const prevToday = lastSyncedTodayStr;
+        serverTimeOffsetMs = newOffset;
+        const nowToday = getTodayStr();
+        if (prevToday && nowToday !== prevToday) {
+          ['expDate', 'boardDate', 'cookDate', 'menuDateInput'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && el.value === prevToday) el.value = nowToday;
+          });
+          lastSyncedTodayStr = nowToday;
+        }
+        if (typeof dataLoaded !== 'undefined' && dataLoaded && typeof currentUser !== 'undefined' && currentUser) {
+          renderAll();
+        }
+      }
+    });
+    function getServerNow() {
+      return new Date(Date.now() + serverTimeOffsetMs);
+    }
+    
+    let state = { adminPin: "1234", cookPin: "9999", month: '', monthStartDate: '', eggPrice: 15, members: [], expenses: [], transactions: [], depositRequests: [], menuRequests: [], auditLogs: [], admin2faEnabled: false, adminTotpSecret: '', trustedAdminDevices: {}, adminDeviceRequests: {}, menuNotice: { date: '', notice: '', breakfast: '', lunch: '', dinner: '' }, history: {}, mealLogs: {} };
+    let currentUser = null; 
+    let dataLoaded = false; 
+    let currentLedgerView = 'expenses';
+    let pendingConfirmCallback = null;
+    let pendingAdminLogin = null;
+
+    // Salted SHA-256 Hashing (Compatible with existing Mess DB PIN hashes)
+    async function hashString(str) {
+      const salt = "OicMessSalt_2026"; 
+      const buffer = new TextEncoder().encode(String(str) + salt);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Constant-time string comparison to mitigate timing side-channels
+    function timingSafeEqualStr(a, b) {
+      const strA = String(a || '');
+      const strB = String(b || '');
+      if (strA.length !== strB.length) return false;
+      let diff = 0;
+      for (let i = 0; i < strA.length; i++) {
+        diff |= strA.charCodeAt(i) ^ strB.charCodeAt(i);
+      }
+      return diff === 0;
+    }
+
+    // Session token derivation to prevent DevTools localStorage role spoofing
+    async function computeSessionToken(roleOrId) {
+      if (roleOrId === 'admin') return await hashString('SESSION_ADMIN_' + state.adminPin);
+      if (roleOrId === 'cook') return await hashString('SESSION_COOK_' + state.cookPin);
+      return await hashString('SESSION_MEMBER_' + String(roleOrId));
+    }
+
+    function getOrCreateDeviceId() {
+      let devId = safeGetStorage('messAppDeviceId');
+      if (!devId) {
+        const arr = new Uint8Array(16);
+        if (window.crypto && window.crypto.getRandomValues) {
+          window.crypto.getRandomValues(arr);
+        } else {
+          for (let i = 0; i < 16; i++) arr[i] = Math.floor(Math.random() * 256);
+        }
+        devId = Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+        safeSetStorage('messAppDeviceId', devId);
+      }
+      return devId;
+    }
+
+    async function getCurrentDeviceHash() {
+      return await hashString('DEV_' + getOrCreateDeviceId());
+    }
+
+    function getDeviceLabel() {
+      const ua = navigator.userAgent || '';
+      let os = 'Device';
+      if (/iPhone|iPad|iPod/i.test(ua)) os = 'iPhone/iPad';
+      else if (/Android/i.test(ua)) os = 'Android';
+      else if (/Windows/i.test(ua)) os = 'Windows';
+      else if (/Mac OS/i.test(ua)) os = 'Mac';
+      else if (/Linux/i.test(ua)) os = 'Linux';
+      let br = 'Browser';
+      if (/Edg/i.test(ua)) br = 'Edge';
+      else if (/Chrome|CriOS/i.test(ua)) br = 'Chrome';
+      else if (/Firefox|FxiOS/i.test(ua)) br = 'Firefox';
+      else if (/Safari/i.test(ua)) br = 'Safari';
+      return `${os} • ${br}`;
+    }
+
+    function generateBase32Secret(len = 16) {
+      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+      const arr = new Uint8Array(len);
+      window.crypto.getRandomValues(arr);
+      return Array.from(arr).map(b => alphabet[b % 32]).join('');
+    }
+
+    function base32ToBytes(base32) {
+      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+      const clean = String(base32 || '').toUpperCase().replace(/[^A-Z2-7]/g, '');
+      let bits = '';
+      for (const ch of clean) {
+        const idx = alphabet.indexOf(ch);
+        if (idx >= 0) bits += idx.toString(2).padStart(5, '0');
+      }
+      const bytes = [];
+      for (let i = 0; i + 8 <= bits.length; i += 8) {
+        bytes.push(parseInt(bits.slice(i, i + 8), 2));
+      }
+      return new Uint8Array(bytes);
+    }
+
+    async function computeTotpCode(secret, counterOffset = 0) {
+      const keyBytes = base32ToBytes(secret);
+      if (!keyBytes.length) return '';
+      const epoch = Math.floor(getServerNow().getTime() / 1000);
+      const counter = Math.floor(epoch / 30) + counterOffset;
+      const buf = new ArrayBuffer(8);
+      const view = new DataView(buf);
+      view.setUint32(0, Math.floor(counter / 0x100000000));
+      view.setUint32(4, counter >>> 0);
+      const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']);
+      const hmac = new Uint8Array(await crypto.subtle.sign('HMAC', cryptoKey, buf));
+      const offset = hmac[hmac.length - 1] & 0x0f;
+      const code = ((hmac[offset] & 0x7f) << 24) | ((hmac[offset + 1] & 0xff) << 16) | ((hmac[offset + 2] & 0xff) << 8) | (hmac[offset + 3] & 0xff);
+      return String(code % 1000000).padStart(6, '0');
+    }
+
+    async function verifyTotpCode(secret, inputCode) {
+      const clean = String(inputCode || '').trim();
+      if (!/^\d{6}$/.test(clean)) return false;
+      for (const offset of [-1, 0, 1]) {
+        const expected = await computeTotpCode(secret, offset);
+        if (timingSafeEqualStr(clean, expected)) return true;
+      }
+      return false;
+    }
+
+    function generateSecureFourDigitId(existingMembers) {
+      const arr = new Uint32Array(1);
+      let id = 1000;
+      do {
+        if (window.crypto && window.crypto.getRandomValues) {
+          window.crypto.getRandomValues(arr);
+          id = 1000 + (arr[0] % 9000);
+        } else {
+          id = Math.floor(1000 + Math.random() * 9000);
+        }
+      } while (existingMembers.some(m => Number(m.id) === id));
+      return id;
+    }
+
+    function generateUniqueTimestampId(existingCollection) {
+      let id = Date.now();
+      while (existingCollection.some(item => Number(item.id) === id)) {
+        id++;
+      }
+      return id;
+    }
+
+    function escapeHTML(str) {
+      if (typeof str !== 'string') return str || '';
+      return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
+    }
+
+    function getTodayStr() { 
+      const d = getServerNow(); 
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); 
+    }
+
+    function getFirstOfMonthStr() {
+      const d = getServerNow();
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2, '0') + '-01';
+    }
+
+    function addDaysToDateStr(dateStr, days) { 
+      let [y, m, d] = dateStr.split('-').map(Number); 
+      let dateObj = new Date(y, m - 1, d); 
+      dateObj.setDate(dateObj.getDate() + days); 
+      return dateObj.getFullYear() + '-' + String(dateObj.getMonth()+1).padStart(2, '0') + '-' + String(dateObj.getDate()).padStart(2, '0'); 
+    }
+
+    const MEAL_CUTOFF_HOURS = { b: 5, l: 10, d: 17, gb: 5, gl: 10, gd: 17, eb: 5, el: 10, ed: 17 };
+    const MEAL_CUTOFF_LABELS = {
+      b: 'Breakfast (5:00 AM cutoff)',
+      l: 'Lunch (10:00 AM cutoff)',
+      d: 'Dinner (5:00 PM cutoff)',
+      gb: 'Breakfast guests (5:00 AM cutoff)',
+      gl: 'Lunch guests (10:00 AM cutoff)',
+      gd: 'Dinner guests (5:00 PM cutoff)',
+      eb: 'Breakfast extra eggs (5:00 AM cutoff)',
+      el: 'Lunch extra eggs (10:00 AM cutoff)',
+      ed: 'Dinner extra eggs (5:00 PM cutoff)'
+    };
+
+    function isSameDayCutoffPassed(dateStr, mealKey) {
+      if (dateStr !== getTodayStr()) return false;
+      const cutoffHour = MEAL_CUTOFF_HOURS[mealKey];
+      if (cutoffHour === undefined) return false;
+      return getServerNow().getHours() >= cutoffHour;
+    }
+
+    function showToast(msg) { 
+      const t = document.getElementById('toast'); 
+      t.innerText = msg; 
+      t.classList.add('show'); 
+      setTimeout(() => t.classList.remove('show'), 3800); 
+    }
+
+    function openConfirmModal(title, message, onConfirm) {
+      document.getElementById('confirmModalTitle').innerText = title || 'Confirm Action';
+      document.getElementById('confirmModalMsg').innerText = message || 'Are you sure you want to proceed?';
+      pendingConfirmCallback = onConfirm;
+      openModal('confirmModal');
+    }
+
+    function closeConfirmModal() {
+      pendingConfirmCallback = null;
+      closeModal('confirmModal');
+    }
+
+    function executeConfirmedAction() {
+      const cb = pendingConfirmCallback;
+      closeConfirmModal();
+      if (typeof cb === 'function') cb();
+    }
+
+    function stripInternalKeys(obj) {
+      const copy = { ...obj };
+      delete copy._key;
+      return copy;
+    }
+    window.addEventListener('DOMContentLoaded', () => {
+      const today = getTodayStr();
+      lastSyncedTodayStr = today;
+      document.getElementById('expDate').value = today; 
+      document.getElementById('boardDate').value = today; 
+      document.getElementById('cookDate').value = today; 
+      document.getElementById('menuDateInput').value = today;
+      document.getElementById('ledgerMonth').value = today.substring(0, 7);
+      
+      db.ref('mess_data').on('value', async (snapshot) => {
+        let data = snapshot.val();
+
+        if (data) {
+          let pinUpdates = {};
+
+          // Preserve exact Firebase keys (_key) so legacy array-indexed records and timestamp-keyed records both update/delete cleanly
+          const rawExpenses = data.expenses && typeof data.expenses === 'object' ? Object.entries(data.expenses) : [];
+          state.expenses = rawExpenses.filter(([, e]) => Boolean(e)).map(([fbKey, e], idx) => ({
+            ...e,
+            _key: String(fbKey),
+            id: Number(e.id) || (1700000000000 + idx),
+            date: e.date || today,
+            category: e.category || 'Groceries',
+            desc: e.desc || 'Bazaar',
+            amount: Number.isFinite(parseFloat(e.amount)) ? parseFloat(e.amount) : 0
+          }));
+
+          const firstOfMonth = getFirstOfMonthStr();
+          const earliestExp = state.expenses.length > 0 ? [...state.expenses].map(e => e.date).sort()[0] : null;
+          state.monthStartDate = data.monthStartDate || (earliestExp && earliestExp < firstOfMonth ? earliestExp : firstOfMonth);
+          if (!data.monthStartDate) {
+            pinUpdates['monthStartDate'] = state.monthStartDate;
+          }
+
+          const rawMembers = data.members && typeof data.members === 'object' ? Object.entries(data.members) : [];
+          state.members = rawMembers.filter(([, m]) => Boolean(m)).map(([fbKey, m]) => ({
+            ...m,
+            _key: String(fbKey),
+            id: Number(m.id) || Number(fbKey),
+            name: m.name || 'Officer',
+            deposit: Number.isFinite(parseFloat(m.deposit)) ? parseFloat(m.deposit) : 0,
+            meals: Number.isFinite(parseFloat(m.meals)) ? parseFloat(m.meals) : 0,
+            eggs: Number.isFinite(parseFloat(m.eggs)) ? parseFloat(m.eggs) : 0,
+            joinDate: m.joinDate || state.monthStartDate,
+            statusEvents: m.statusEvents ? Object.values(m.statusEvents).filter(Boolean) : []
+          }));
+
+          const rawTransactions = data.transactions && typeof data.transactions === 'object' ? Object.entries(data.transactions) : [];
+          state.transactions = rawTransactions.filter(([, t]) => Boolean(t)).map(([fbKey, t], idx) => ({
+            ...t,
+            _key: String(fbKey),
+            id: Number(t.id) || (1700000010000 + idx),
+            date: t.date || today,
+            memberId: Number(t.memberId),
+            amount: Number.isFinite(parseFloat(t.amount)) ? parseFloat(t.amount) : 0,
+            desc: t.desc || 'Transaction'
+          }));
+
+          const rawDepositRequests = data.depositRequests && typeof data.depositRequests === 'object' ? Object.entries(data.depositRequests) : [];
+          state.depositRequests = rawDepositRequests.filter(([, r]) => Boolean(r)).map(([fbKey, r], idx) => ({
+            ...r,
+            _key: String(fbKey),
+            id: Number(r.id) || (1700000020000 + idx),
+            memberId: Number(r.memberId),
+            memberName: r.memberName || 'Officer',
+            amount: Number.isFinite(parseFloat(r.amount)) ? parseFloat(r.amount) : 0,
+            note: r.note || '',
+            date: r.date || today,
+            status: r.status || 'pending'
+          }));
+
+          const rawMenuRequests = data.menuRequests && typeof data.menuRequests === 'object' ? Object.entries(data.menuRequests) : [];
+          state.menuRequests = rawMenuRequests.filter(([, r]) => Boolean(r)).map(([fbKey, r], idx) => ({
+            ...r,
+            _key: String(fbKey),
+            id: Number(r.id) || (1700000040000 + idx),
+            memberId: Number(r.memberId),
+            memberName: r.memberName || 'Officer',
+            date: r.date || today,
+            mealSlot: r.mealSlot || 'lunch',
+            dish: r.dish || '',
+            note: r.note || '',
+            status: r.status || 'pending'
+          }));
+
+          const rawAuditLogs = data.auditLogs && typeof data.auditLogs === 'object' ? Object.entries(data.auditLogs) : [];
+          state.auditLogs = rawAuditLogs.filter(([, l]) => Boolean(l)).map(([fbKey, l], idx) => ({
+            ...l,
+            _key: String(fbKey),
+            id: Number(l.id) || (1700000030000 + idx),
+            date: l.date || today,
+            action: l.action || 'Action',
+            details: l.details || ''
+          })).sort((a, b) => Number(b.id) - Number(a.id));
+
+          state.menuNotice = (data.menuNotice && typeof data.menuNotice === 'object') ? {
+            date: data.menuNotice.date || today,
+            notice: data.menuNotice.notice || '',
+            breakfast: data.menuNotice.breakfast || '',
+            lunch: data.menuNotice.lunch || '',
+            dinner: data.menuNotice.dinner || ''
+          } : { date: today, notice: '', breakfast: '', lunch: '', dinner: '' };
+
+          // Explicitly reset empty collections instead of retaining stale arrays from previous state
+          state.history = data.history && typeof data.history === 'object' ? data.history : {};
+          state.admin2faEnabled = Boolean(data.admin2faEnabled && data.adminTotpSecret);
+          state.adminTotpSecret = data.adminTotpSecret ? String(data.adminTotpSecret) : '';
+          state.trustedAdminDevices = data.trustedAdminDevices && typeof data.trustedAdminDevices === 'object' ? data.trustedAdminDevices : {};
+          state.adminDeviceRequests = data.adminDeviceRequests && typeof data.adminDeviceRequests === 'object' ? data.adminDeviceRequests : {};
+          state.mealLogs = data.mealLogs && typeof data.mealLogs === 'object' ? data.mealLogs : {};
+          state.adminPin = data.adminPin ? String(data.adminPin) : "1234";
+          state.cookPin = data.cookPin ? String(data.cookPin) : "9999";
+          state.month = data.month || getServerNow().toLocaleDateString("en-US", { month: "long", year: "numeric" });
+          state.eggPrice = (data.eggPrice !== undefined && data.eggPrice !== null) ? (parseFloat(data.eggPrice) || 0) : 15;
+          
+          if (state.adminPin.length < 60) {
+            state.adminPin = await hashString(state.adminPin);
+            pinUpdates['adminPin'] = state.adminPin;
+          }
+          if (state.cookPin.length < 60) {
+            state.cookPin = await hashString(state.cookPin);
+            pinUpdates['cookPin'] = state.cookPin;
+          }
+          if (Object.keys(pinUpdates).length > 0 && currentUser === 'admin') {
+            db.ref('mess_data').update(pinUpdates);
+          }
+        } else { 
+          state.monthStartDate = getFirstOfMonthStr();
+          state.expenses = [];
+          state.members = [];
+          state.transactions = [];
+          state.depositRequests = [];
+          state.menuRequests = [];
+          state.auditLogs = [];
+          state.menuNotice = { date: today, notice: '', breakfast: '', lunch: '', dinner: '' };
+          state.history = {};
+          state.admin2faEnabled = false;
+          state.adminTotpSecret = '';
+          state.trustedAdminDevices = {};
+          state.adminDeviceRequests = {};
+          state.mealLogs = {};
+          state.adminPin = await hashString(state.adminPin);
+          state.cookPin = await hashString(state.cookPin);
+        }
+        
+        dataLoaded = true; 
+        document.getElementById('loginTitle').innerText = "Access Account"; 
+        document.getElementById('loginTitle').nextElementSibling.innerText = "Enter PIN or Member ID"; 
+        document.getElementById('loginForm').style.display = 'block';
+        
+        // Verify saved session token against current DB state
+        const savedUser = safeGetStorage('messAppUser');
+        const savedToken = safeGetStorage('messAppSessionHash');
+        if (!currentUser && savedUser) {
+          const expectedToken = await computeSessionToken(savedUser);
+          const validMember = state.members.find(m => m.id.toString() === savedUser);
+          const tokenMatches = savedToken && timingSafeEqualStr(savedToken, expectedToken);
+
+          const devHash = await getCurrentDeviceHash();
+          const trustedMap = state.trustedAdminDevices || {};
+          const hasTrustedDevices = Object.keys(trustedMap).length > 0;
+          const isAdminDeviceTrusted = !hasTrustedDevices || Boolean(trustedMap[devHash]);
+
+          if (savedUser === 'admin' && tokenMatches && isAdminDeviceTrusted) {
+            currentUser = 'admin';
+          } else if (savedUser === 'cook' && tokenMatches) {
+            currentUser = 'cook';
+          } else if (validMember && (!savedToken || tokenMatches)) {
+            currentUser = validMember.id;
+            if (!savedToken) safeSetStorage('messAppSessionHash', expectedToken);
+          } else {
+            safeRemoveStorage('messAppUser');
+            safeRemoveStorage('messAppSessionHash');
+          }
+        } else if (currentUser === 'admin' || currentUser === 'cook') {
+          if (savedToken) {
+            const expectedToken = await computeSessionToken(currentUser);
+            if (!timingSafeEqualStr(savedToken, expectedToken)) {
+              logout();
+              showToast("🔒 Session expired due to PIN update");
+              return;
+            }
+          }
+          if (currentUser === 'admin') {
+            const devHash = await getCurrentDeviceHash();
+            const trustedMap = state.trustedAdminDevices || {};
+            if (Object.keys(trustedMap).length > 0 && !trustedMap[devHash]) {
+              logout();
+              showToast("🔒 Admin access for this device was revoked");
+              return;
+            }
+          }
+        } else if (currentUser && !state.members.some(m => m.id.toString() === currentUser.toString())) {
+          logout();
+          return;
+        }
+        
+        if (!currentUser && pendingAdminLogin && pendingAdminLogin.waitingApproval) {
+          const devHash = await getCurrentDeviceHash();
+          if (state.trustedAdminDevices && state.trustedAdminDevices[devHash]) {
+            const keepLogged = pendingAdminLogin.keepLogged;
+            pendingAdminLogin = null;
+            await completeAdminLogin(keepLogged, false);
+            return;
+          }
+          const reqObj = state.adminDeviceRequests && state.adminDeviceRequests[devHash];
+          if (reqObj && reqObj.status === 'rejected') {
+            document.getElementById('deviceWaitStatus').innerText = '❌ Request rejected by Admin.';
+            document.getElementById('deviceWaitStatus').style.color = 'var(--danger)';
+          }
+        }
+        if (currentUser) { 
+          if (currentUser === 'admin') document.getElementById('welcomeMsg').innerText = "Welcome, Admin";
+          else if (currentUser === 'cook') document.getElementById('welcomeMsg').innerText = "Kitchen Dashboard";
+          else { 
+            const m = state.members.find(x => x.id.toString() === currentUser.toString()); 
+            if (m) document.getElementById('welcomeMsg').innerText = "Welcome, " + m.name; 
+          }
+          enterApp(); 
+        }
+      });
+    });
+    function saveMemberToDB(m) {
+      if (!m) return;
+      const key = m._key !== undefined ? m._key : String(m.id);
+      db.ref(`mess_data/members/${key}`).set(stripInternalKeys(m));
+    }
+
+    function buildKeyedMap(collection) {
+      const map = {};
+      (collection || []).forEach(item => {
+        if (!item) return;
+        const k = item._key !== undefined ? item._key : String(item.id);
+        map[k] = stripInternalKeys(item);
+      });
+      return map;
+    }
+    
+    function adminSaveSettings() { 
+      if (currentUser !== 'admin') return;
+      const oldStart = state.monthStartDate;
+      state.month = (document.getElementById('messMonth').value || 'Current Month').trim(); 
+      const parsedEgg = parseFloat(document.getElementById('eggPriceInput').value);
+      state.eggPrice = (Number.isFinite(parsedEgg) && parsedEgg >= 0) ? parsedEgg : 0;
+      const newStart = document.getElementById('monthStartInput').value;
+      let updates = {
+        month: state.month,
+        eggPrice: state.eggPrice
+      };
+      if (newStart) {
+        state.monthStartDate = newStart;
+        updates.monthStartDate = newStart;
+        if (oldStart && newStart !== oldStart) {
+          state.members.forEach(m => {
+            if (!m.joinDate || m.joinDate === oldStart) {
+              m.joinDate = newStart;
+              const mKey = m._key !== undefined ? m._key : String(m.id);
+              updates[`members/${mKey}/joinDate`] = newStart;
+            }
+          });
+        }
+      }
+      db.ref('mess_data').update(updates);
+      logAudit('Settings Updated', `Title: ${state.month}, Egg: ৳${state.eggPrice}`);
+      showToast("✅ Settings saved");
+    }
+    
+    async function changePins() { 
+      if (currentUser !== 'admin') return;
+      const nA = document.getElementById('newAdminPin').value.trim(); 
+      const nC = document.getElementById('newCookPin').value.trim(); 
+      let updates = {};
+      if (nA.length >= 4) {
+        state.adminPin = await hashString(nA);
+        updates['adminPin'] = state.adminPin;
+      } 
+      if (nC.length >= 4) {
+        state.cookPin = await hashString(nC);
+        updates['cookPin'] = state.cookPin;
+      }
+      if (Object.keys(updates).length > 0) { 
+        if (safeGetStorage('messAppUser') === 'admin') {
+          safeSetStorage('messAppSessionHash', await computeSessionToken('admin'));
+        }
+        await db.ref('mess_data').update(updates);
+        logAudit('Security PINs Updated', Object.keys(updates).join(', '));
+        showToast("🔒 Security PINs updated (SHA-256 Hashed)"); 
+      } else {
+        showToast("⚠️ PIN must be at least 4 characters");
+      }
+      document.getElementById('newAdminPin').value = ''; 
+      document.getElementById('newCookPin').value = '';
+    }
+
+    let lastAuditId = 0;
+    function logAudit(action, details) {
+      if (currentUser !== 'admin') return;
+      const candidate = generateUniqueTimestampId(state.auditLogs || []);
+      const logId = candidate > lastAuditId ? candidate : lastAuditId + 1;
+      lastAuditId = logId;
+      const entry = {
+        id: logId,
+        date: getTodayStr(),
+        timestamp: getServerNow().toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }),
+        action: String(action || 'Admin Action'),
+        details: String(details || '')
+      };
+      state.auditLogs.unshift(entry);
+      db.ref(`mess_data/auditLogs/${logId}`).set(entry);
+    }
+
+    function saveMenuNotice() {
+      if (currentUser !== 'admin') return;
+      const payload = {
+        date: document.getElementById('menuDateInput').value || getTodayStr(),
+        notice: (document.getElementById('menuNoticeInput').value || '').trim(),
+        breakfast: (document.getElementById('menuBInput').value || '').trim(),
+        lunch: (document.getElementById('menuLInput').value || '').trim(),
+        dinner: (document.getElementById('menuDInput').value || '').trim(),
+        updatedAt: getServerNow().toISOString()
+      };
+      state.menuNotice = payload;
+      db.ref('mess_data/menuNotice').set(payload);
+      logAudit('Menu & Notice', `Updated for ${payload.date}`);
+      showToast("✅ Menu & Notice Board updated");
+    }
+
+    function exportBackupJSON() {
+      const cleanState = {
+        ...state,
+        members: state.members.map(stripInternalKeys),
+        expenses: state.expenses.map(stripInternalKeys),
+        transactions: state.transactions.map(stripInternalKeys),
+        depositRequests: state.depositRequests.map(stripInternalKeys),
+        menuRequests: (state.menuRequests || []).map(stripInternalKeys),
+        auditLogs: (state.auditLogs || []).map(stripInternalKeys)
+      };
+      const blob = new Blob([JSON.stringify({ mess_data: cleanState }, null, 2)], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const dlAnchor = document.createElement('a');
+      dlAnchor.href = url;
+      dlAnchor.download = `officers-mess-backup-${getTodayStr()}.json`;
+      document.body.appendChild(dlAnchor);
+      dlAnchor.click();
+      dlAnchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast("⬇️ Backup JSON downloaded");
+    }
+
+    function handleRestoreFile(evt) {
+      if (currentUser !== 'admin') return;
+      const file = evt.target.files && evt.target.files[0];
+      evt.target.value = '';
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          const payload = parsed && parsed.mess_data ? parsed.mess_data : parsed;
+          if (!payload || typeof payload !== 'object' || (!payload.members && !payload.expenses && !payload.transactions)) {
+            showToast("⚠️ Invalid backup JSON structure");
+            return;
+          }
+          const mCount = Array.isArray(payload.members) ? payload.members.length : Object.keys(payload.members || {}).length;
+          const eCount = Array.isArray(payload.expenses) ? payload.expenses.length : Object.keys(payload.expenses || {}).length;
+          const tCount = Array.isArray(payload.transactions) ? payload.transactions.length : Object.keys(payload.transactions || {}).length;
+
+          openConfirmModal(
+            "Restore Database Backup",
+            `This will replace the current database with the backup:\n• Officers: ${mCount}\n• Expenses: ${eCount}\n• Transactions: ${tCount}\n\nProceed?`,
+            async () => {
+              const normalizeMap = (col) => {
+                if (!col) return {};
+                if (Array.isArray(col)) {
+                  const map = {};
+                  col.filter(Boolean).forEach((item, idx) => {
+                    const k = item.id !== undefined ? String(item.id) : String(idx);
+                    map[k] = stripInternalKeys(item);
+                  });
+                  return map;
+                }
+                const map = {};
+                Object.entries(col).forEach(([k, v]) => {
+                  if (v) map[k] = stripInternalKeys(v);
+                });
+                return map;
+              };
+
+              const cleanRestore = {
+                adminPin: payload.adminPin ? String(payload.adminPin) : state.adminPin,
+                cookPin: payload.cookPin ? String(payload.cookPin) : state.cookPin,
+                month: payload.month || state.month || 'Current Period',
+                monthStartDate: payload.monthStartDate || getFirstOfMonthStr(),
+                eggPrice: (payload.eggPrice !== undefined && payload.eggPrice !== null) ? (parseFloat(payload.eggPrice) || 0) : 15,
+                members: normalizeMap(payload.members),
+                expenses: normalizeMap(payload.expenses),
+                transactions: normalizeMap(payload.transactions),
+                depositRequests: normalizeMap(payload.depositRequests),
+                menuRequests: normalizeMap(payload.menuRequests),
+                auditLogs: normalizeMap(payload.auditLogs),
+                menuNotice: payload.menuNotice || { date: getTodayStr(), notice: '', breakfast: '', lunch: '', dinner: '' },
+                history: payload.history || {},
+                mealLogs: payload.mealLogs || {},
+                admin2faEnabled: Boolean(payload.admin2faEnabled && payload.adminTotpSecret),
+                adminTotpSecret: payload.adminTotpSecret ? String(payload.adminTotpSecret) : '',
+                trustedAdminDevices: payload.trustedAdminDevices || state.trustedAdminDevices || {}
+              };
+
+              if (cleanRestore.adminPin.length < 60) cleanRestore.adminPin = await hashString(cleanRestore.adminPin);
+              if (cleanRestore.cookPin.length < 60) cleanRestore.cookPin = await hashString(cleanRestore.cookPin);
+
+              await db.ref('mess_data').set(cleanRestore);
+              logAudit('Backup Restored', `Restored ${mCount} officers, ${eCount} expenses, ${tCount} transactions`);
+              showToast("✅ Database restored from backup");
+            }
+          );
+        } catch (err) {
+          showToast("⚠️ Failed to parse JSON backup file");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function csvSafeCell(val) {
+      let s = String(val === null || val === undefined ? '' : val);
+      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+
+    function exportMonthlyCSV() {
+      const monthVal = document.getElementById('ledgerMonth').value || getTodayStr().substring(0, 7);
+      const calc = getCalculations();
+      const activePeriodMonth = (state.monthStartDate || getTodayStr()).substring(0, 7);
+      const archivedPeriod = state.history && state.history[monthVal] ? state.history[monthVal] : null;
+      const isCurrentActiveMonth = (monthVal === activePeriodMonth);
+
+      const rows = [];
+      rows.push(['OFFICERS MESS LEDGER EXPORT', monthVal].map(csvSafeCell).join(','));
+      rows.push([]);
+
+      if (archivedPeriod && archivedPeriod.memberSnapshots && !isCurrentActiveMonth) {
+        rows.push(['ARCHIVED BILL SUMMARY', archivedPeriod.title || monthVal, 'Meal Rate', (parseFloat(archivedPeriod.mealRate) || 0).toFixed(2)].map(csvSafeCell).join(','));
+        rows.push(['Member ID', 'Officer Name', 'Meals', 'Meal Charge', 'Extra Eggs', 'Egg Charge', 'Total Charge', 'Final Balance'].map(csvSafeCell).join(','));
+        Object.entries(archivedPeriod.memberSnapshots).forEach(([mId, snap]) => {
+          rows.push([
+            mId, snap.name, (parseFloat(snap.meals)||0).toFixed(1),
+            (parseFloat(snap.mealCost)||0).toFixed(2), snap.eggs || 0,
+            (parseFloat(snap.eggCost)||0).toFixed(2), (parseFloat(snap.totalCost)||0).toFixed(2),
+            (parseFloat(snap.finalBalance)||0).toFixed(2)
+          ].map(csvSafeCell).join(','));
+        });
+      } else {
+        rows.push(['ACTIVE PERIOD BILL SUMMARY', state.month || monthVal, 'Meal Rate', calc.mealRate.toFixed(2)].map(csvSafeCell).join(','));
+        rows.push(['Member ID', 'Officer Name', 'Meals', 'Meal Charge', 'Extra Eggs', 'Egg Charge', 'Total Charge', 'Deposit', 'Net Balance'].map(csvSafeCell).join(','));
+        const membersForCsv = currentUser === 'admin' ? state.members : state.members.filter(m => m.id.toString() === currentUser.toString());
+        membersForCsv.forEach(m => {
+          const mMeals = isCurrentActiveMonth ? calculateMemberMeals(m) : calculateMealsForMonthDetailed(m, monthVal).total;
+          const mMealCost = mMeals * calc.mealRate;
+          const mEggs = isCurrentActiveMonth ? calculateMemberEggs(m) : (parseFloat(m.eggs) || 0);
+          const mEggCost = mEggs * (parseFloat(state.eggPrice) || 0);
+          const mTotal = mMealCost + mEggCost;
+          const mDep = parseFloat(m.deposit) || 0;
+          rows.push([
+            m.id, m.name, mMeals.toFixed(1), mMealCost.toFixed(2),
+            mEggs, mEggCost.toFixed(2), mTotal.toFixed(2),
+            mDep.toFixed(2), (mDep - mTotal).toFixed(2)
+          ].map(csvSafeCell).join(','));
+        });
+      }
+
+      rows.push([]);
+      rows.push(['MONTHLY EXPENSES', monthVal].map(csvSafeCell).join(','));
+      rows.push(['Date', 'Category', 'Description', 'Amount'].map(csvSafeCell).join(','));
+      const monthExps = state.expenses.filter(e => e.date && e.date.startsWith(monthVal)).sort((a,b) => a.date.localeCompare(b.date));
+      monthExps.forEach(e => {
+        rows.push([e.date, e.category || 'Misc', e.desc, (parseFloat(e.amount)||0).toFixed(2)].map(csvSafeCell).join(','));
+      });
+
+      const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `officers-mess-ledger-${monthVal}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast(`📊 Exported ${monthVal} Ledger CSV`);
+    }
+    async function handleLogin() {
+      if (!dataLoaded) return; 
+      const pinEl = document.getElementById('loginPin'); 
+      const btnEl = document.getElementById('loginBtn');
+      const pin = pinEl.value.trim(); 
+      const keepLogged = document.getElementById('keepLoggedIn').checked;
+
+      const failLogin = () => {
+        document.getElementById('loginError').style.display = 'block';
+        pinEl.disabled = true; btnEl.disabled = true; pinEl.value = 'Wait...';
+        setTimeout(() => { pinEl.disabled = false; btnEl.disabled = false; pinEl.value = ''; pinEl.focus(); }, 1500);
+      };
+
+      const hashedPin = await hashString(pin);
+
+      if (timingSafeEqualStr(hashedPin, state.adminPin) || (state.adminPin.length < 60 && timingSafeEqualStr(pin, state.adminPin))) {
+        const devHash = await getCurrentDeviceHash();
+        const trustedMap = state.trustedAdminDevices || {};
+        const hasTrustedDevices = Object.keys(trustedMap).length > 0;
+        const isDeviceTrusted = Boolean(trustedMap[devHash]);
+
+        if (!hasTrustedDevices) {
+          await completeAdminLogin(keepLogged, true);
+          return;
+        }
+        if (isDeviceTrusted) {
+          await completeAdminLogin(keepLogged, false);
+          return;
+        }
+
+        pendingAdminLogin = { keepLogged, waitingApproval: false };
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('adminVerifyBox').style.display = 'block';
+        document.getElementById('verifyError').style.display = 'none';
+        if (state.admin2faEnabled) {
+          document.getElementById('adminVerifyMsg').innerText = 'New device detected. Enter the 6-digit code from your Authenticator app.';
+          document.getElementById('totpVerifyWrap').style.display = 'block';
+          document.getElementById('deviceWaitWrap').style.display = 'none';
+          document.getElementById('loginTotpCode').value = '';
+          document.getElementById('loginTotpCode').focus();
+        } else {
+          document.getElementById('adminVerifyMsg').innerText = 'This device is not trusted for Admin login. Request approval from an already-trusted Admin device.';
+          document.getElementById('totpVerifyWrap').style.display = 'none';
+          document.getElementById('deviceWaitWrap').style.display = 'block';
+          document.getElementById('deviceWaitStatus').innerText = '';
+          document.getElementById('deviceWaitStatus').style.color = 'var(--accent)';
+        }
+        return;
+      }
+      else if (timingSafeEqualStr(hashedPin, state.cookPin) || (state.cookPin.length < 60 && timingSafeEqualStr(pin, state.cookPin))) { 
+        currentUser = 'cook'; 
+        if (keepLogged) {
+          safeSetStorage('messAppUser', 'cook');
+          safeSetStorage('messAppSessionHash', await computeSessionToken('cook'));
+        }
+        enterApp(); 
+      }
+      else {
+        const member = state.members.find(m => m.id.toString() === pin);
+        if (member) { 
+          currentUser = member.id; 
+          document.getElementById('welcomeMsg').innerText = "Welcome, " + member.name; 
+          if (keepLogged) {
+            safeSetStorage('messAppUser', member.id.toString());
+            safeSetStorage('messAppSessionHash', await computeSessionToken(member.id.toString()));
+          }
+          enterApp(); 
+        }
+        else { failLogin(); }
+      }
+    }
+
+    function enterApp() {
+      const wasHidden = document.getElementById('appContainer').style.display !== 'block';
+      document.getElementById('loginScreen').style.display = 'none'; 
+      document.getElementById('appContainer').style.display = 'block'; 
+      document.getElementById('loginPin').value = '';
+      document.getElementById('loginError').style.display = 'none';
+      
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.style.display = 'none');
+      
+      if (currentUser === 'admin') { 
+        document.body.classList.add('is-admin');
+        document.getElementById('dailyMenuRequestBtnWrap').style.display = 'none';
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.style.display = 'flex'); 
+        if (wasHidden) switchTab('dashboard'); 
+      } 
+      else if (currentUser === 'cook') { 
+        document.body.classList.remove('is-admin');
+        document.getElementById('navCookBtn').style.display = 'flex'; 
+        if (wasHidden) switchTab('cook'); 
+      } 
+      else { 
+        document.body.classList.remove('is-admin');
+        document.getElementById('dailyMenuRequestBtnWrap').style.display = 'block';
+        document.getElementById('navDashboardBtn').style.display = 'flex'; 
+        document.getElementById('navDailyBtn').style.display = 'flex'; 
+        document.getElementById('navMembersBtn').style.display = 'flex'; 
+        document.getElementById('navLedgerBtn').style.display = 'flex'; 
+        if (wasHidden) switchTab('dashboard'); 
+      }
+      
+      document.getElementById('dispMonthTitle').innerText = state.month || 'Current Period';
+      document.getElementById('dispMonthStart').innerText = state.monthStartDate || ''; 
+      document.getElementById('messMonth').value = state.month || ''; 
+      document.getElementById('eggPriceInput').value = state.eggPrice ?? 15;
+      document.getElementById('monthStartInput').value = state.monthStartDate || '';
+      if (state.menuNotice) {
+        document.getElementById('menuDateInput').value = state.menuNotice.date || getTodayStr();
+        document.getElementById('menuNoticeInput').value = state.menuNotice.notice || '';
+        document.getElementById('menuBInput').value = state.menuNotice.breakfast || '';
+        document.getElementById('menuLInput').value = state.menuNotice.lunch || '';
+        document.getElementById('menuDInput').value = state.menuNotice.dinner || '';
+      }
+      renderAll();
+    }
+    
+    async function completeAdminLogin(keepLogged, registerDevice) {
+      currentUser = 'admin';
+      document.getElementById('welcomeMsg').innerText = "Welcome, Admin";
+      if (keepLogged) {
+        safeSetStorage('messAppUser', 'admin');
+        safeSetStorage('messAppSessionHash', await computeSessionToken('admin'));
+      }
+      const devHash = await getCurrentDeviceHash();
+      const updates = {
+        adminPin: state.adminPin,
+        cookPin: state.cookPin,
+        monthStartDate: state.monthStartDate || getFirstOfMonthStr()
+      };
+      if (registerDevice) {
+        updates[`trustedAdminDevices/${devHash}`] = {
+          hash: devHash,
+          label: getDeviceLabel(),
+          addedDate: getTodayStr(),
+          lastUsed: getTodayStr()
+        };
+      } else if (state.trustedAdminDevices && state.trustedAdminDevices[devHash]) {
+        updates[`trustedAdminDevices/${devHash}/lastUsed`] = getTodayStr();
+      }
+      updates[`adminDeviceRequests/${devHash}`] = null;
+      await db.ref('mess_data').update(updates);
+      document.getElementById('adminVerifyBox').style.display = 'none';
+      document.getElementById('loginForm').style.display = 'block';
+      enterApp();
+    }
+
+    async function verifyAdminSecondFactor() {
+      if (!pendingAdminLogin) return;
+      const code = document.getElementById('loginTotpCode').value.trim();
+      const ok = await verifyTotpCode(state.adminTotpSecret, code);
+      if (!ok) {
+        document.getElementById('verifyError').innerText = 'Invalid 6-digit Authenticator code.';
+        document.getElementById('verifyError').style.display = 'block';
+        return;
+      }
+      const trustDevice = document.getElementById('trustThisDevice').checked;
+      const keepLogged = pendingAdminLogin.keepLogged;
+      pendingAdminLogin = null;
+      await completeAdminLogin(keepLogged, trustDevice);
+    }
+
+    async function requestAdminDeviceApproval() {
+      if (!pendingAdminLogin) return;
+      const devHash = await getCurrentDeviceHash();
+      pendingAdminLogin.waitingApproval = true;
+      await db.ref(`mess_data/adminDeviceRequests/${devHash}`).set({
+        hash: devHash,
+        label: getDeviceLabel(),
+        date: getTodayStr(),
+        timestamp: getServerNow().toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }),
+        status: 'pending'
+      });
+      document.getElementById('deviceWaitStatus').innerText = '⏳ Waiting for approval from a trusted Admin device...';
+      document.getElementById('deviceWaitStatus').style.color = 'var(--accent)';
+    }
+
+    function cancelAdminVerify() {
+      pendingAdminLogin = null;
+      document.getElementById('adminVerifyBox').style.display = 'none';
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('loginPin').value = '';
+      document.getElementById('verifyError').style.display = 'none';
+    }
+
+    function approveAdminDevice(devHash) {
+      if (currentUser !== 'admin') return;
+      const req = state.adminDeviceRequests && state.adminDeviceRequests[devHash];
+      if (!req) return;
+      db.ref('mess_data').update({
+        [`trustedAdminDevices/${devHash}`]: {
+          hash: devHash,
+          label: req.label || 'Trusted Device',
+          addedDate: getTodayStr(),
+          lastUsed: getTodayStr()
+        },
+        [`adminDeviceRequests/${devHash}`]: null
+      });
+      logAudit('Device Trusted', `Approved Admin device: ${req.label || 'Device'}`);
+      showToast('✅ Admin device approved & trusted');
+    }
+
+    function rejectAdminDevice(devHash) {
+      if (currentUser !== 'admin') return;
+      const req = state.adminDeviceRequests && state.adminDeviceRequests[devHash];
+      if (!req) return;
+      db.ref(`mess_data/adminDeviceRequests/${devHash}/status`).set('rejected');
+      logAudit('Device Rejected', `Rejected Admin login from: ${req.label || 'Device'}`);
+      showToast('❌ Device request rejected');
+    }
+
+    async function revokeTrustedDevice(devHash) {
+      if (currentUser !== 'admin') return;
+      const myHash = await getCurrentDeviceHash();
+      const dev = state.trustedAdminDevices && state.trustedAdminDevices[devHash];
+      if (!dev) return;
+      const isSelf = devHash === myHash;
+      const totalTrusted = Object.keys(state.trustedAdminDevices || {}).length;
+      if (isSelf && totalTrusted <= 1) {
+        showToast('⚠️ Cannot revoke the only trusted Admin device');
+        return;
+      }
+      openConfirmModal(
+        'Revoke Trusted Device',
+        `Revoke Admin access for "${dev.label || 'Device'}"?${isSelf ? ' You will be logged out on this device.' : ''}`,
+        () => {
+          db.ref(`mess_data/trustedAdminDevices/${devHash}`).remove();
+          logAudit('Device Revoked', `Revoked Admin access: ${dev.label || 'Device'}`);
+          showToast('🗑️ Trusted device revoked');
+        }
+      );
+    }
+
+    function startTotpSetup() {
+      if (currentUser !== 'admin') return;
+      const secret = generateBase32Secret(16);
+      window._pendingTotpSecret = secret;
+      renderSecuritySettings();
+    }
+
+    async function confirmEnableTotp() {
+      if (currentUser !== 'admin' || !window._pendingTotpSecret) return;
+      const code = (document.getElementById('setupTotpCode')?.value || '').trim();
+      const ok = await verifyTotpCode(window._pendingTotpSecret, code);
+      if (!ok) {
+        showToast('⚠️ Invalid 6-digit code. Check your Authenticator app.');
+        return;
+      }
+      const secret = window._pendingTotpSecret;
+      window._pendingTotpSecret = null;
+      await db.ref('mess_data').update({
+        admin2faEnabled: true,
+        adminTotpSecret: secret
+      });
+      logAudit('2FA Enabled', 'Authenticator TOTP 2FA enabled for Admin');
+      showToast('🔒 2FA Authenticator enabled');
+    }
+
+    function disableTotp() {
+      if (currentUser !== 'admin') return;
+      openConfirmModal(
+        'Disable 2FA',
+        'Disable Authenticator 2FA for Admin login? Untrusted devices will still require trusted-device approval.',
+        () => {
+          window._pendingTotpSecret = null;
+          db.ref('mess_data').update({
+            admin2faEnabled: false,
+            adminTotpSecret: null
+          });
+          logAudit('2FA Disabled', 'Authenticator TOTP 2FA disabled');
+          showToast('2FA disabled');
+        }
+      );
+    }
+
+    async function renderSecuritySettings() {
+      if (currentUser !== 'admin') return;
+      const totpEl = document.getElementById('totpSettingsBox');
+      const devEl = document.getElementById('trustedDevicesList');
+      if (!totpEl || !devEl) return;
+
+      if (state.admin2faEnabled) {
+        totpEl.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#eafaf1; border:1px solid #a9dfbf; padding:10px 12px; border-radius:10px;">
+            <div><strong style="color:var(--success);">🔒 Authenticator 2FA Active</strong><div style="font-size:0.78rem; color:#555;">New devices must enter a 6-digit TOTP code.</div></div>
+            <button class="btn btn-sm btn-danger" onclick="disableTotp()">Disable</button>
+          </div>`;
+      } else if (window._pendingTotpSecret) {
+        const sec = window._pendingTotpSecret;
+        const uri = `otpauth://totp/OfficersMess:Admin?secret=${encodeURIComponent(sec)}&issuer=OfficersMess`;
+        totpEl.innerHTML = `
+          <div style="background:var(--bg); padding:12px; border-radius:10px; border:1px solid var(--border);">
+            <div style="font-size:0.84rem; font-weight:700; margin-bottom:6px;">Setup Authenticator App (Google Authenticator / Authy)</div>
+            <div style="font-size:0.78rem; color:#555; margin-bottom:8px;">Add this setup key manually or open the link on your phone:</div>
+            <div style="background:white; padding:8px; border-radius:6px; font-family:monospace; font-size:0.9rem; font-weight:700; text-align:center; letter-spacing:2px; border:1px dashed #aaa; margin-bottom:8px; user-select:all;">${escapeHTML(sec)}</div>
+            <div style="text-align:center; margin-bottom:10px;"><a href="${uri}" style="font-size:0.8rem; color:var(--accent); font-weight:600;">Open in Authenticator App</a></div>
+            <div class="form-group" style="margin-bottom:8px;"><label>Enter 6-digit code to verify</label><input type="text" id="setupTotpCode" placeholder="000000" maxlength="6" inputmode="numeric"></div>
+            <div class="grid-2">
+              <button class="btn btn-sm" style="background:#e5e5ea; color:#333; padding:10px;" onclick="window._pendingTotpSecret=null; renderSecuritySettings();">Cancel</button>
+              <button class="btn btn-sm btn-success" style="padding:10px;" onclick="confirmEnableTotp()">Verify &amp; Enable</button>
+            </div>
+          </div>`;
+      } else {
+        totpEl.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg); padding:10px 12px; border-radius:10px;">
+            <div><strong style="font-size:0.88rem;">Authenticator App 2FA</strong><div style="font-size:0.76rem; color:var(--text-muted);">Require a 6-digit TOTP code on new devices.</div></div>
+            <button class="btn btn-sm btn-primary" onclick="startTotpSetup()">Enable 2FA</button>
+          </div>`;
+      }
+
+      const myHash = await getCurrentDeviceHash();
+      const devs = Object.values(state.trustedAdminDevices || {});
+      if (devs.length === 0) {
+        devEl.innerHTML = '<div style="font-size:0.82rem; color:var(--text-muted);">No trusted devices registered yet.</div>';
+      } else {
+        devEl.innerHTML = devs.map(d => {
+          const isMe = d.hash === myHash;
+          return `<div class="ledger-item" style="padding:8px 0;">
+            <div>
+              <div style="font-size:0.86rem; font-weight:700;">${escapeHTML(d.label || 'Device')} ${isMe ? '<span class="member-id-badge" style="background:#eafaf1; color:var(--success);">This Device</span>' : ''}</div>
+              <div style="font-size:0.74rem; color:var(--text-muted);">Added: ${escapeHTML(d.addedDate || '-')} &bull; Last used: ${escapeHTML(d.lastUsed || '-')}</div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="revokeTrustedDevice('${escapeHTML(d.hash)}')">Revoke</button>
+          </div>`;
+        }).join('');
+      }
+    }
+
+    function logout() { 
+      currentUser = null; 
+      pendingAdminLogin = null;
+      document.body.classList.remove('is-admin');
+      document.getElementById('adminVerifyBox').style.display = 'none';
+      document.getElementById('loginForm').style.display = 'block';
+      safeRemoveStorage('messAppUser'); 
+      safeRemoveStorage('messAppSessionHash');
+      document.querySelectorAll('.modal-overlay.active').forEach(el => el.classList.remove('active'));
+      document.getElementById('appContainer').style.display = 'none'; 
+      document.getElementById('loginScreen').style.display = 'flex'; 
+      document.getElementById('loginError').style.display = 'none'; 
+    }
+
+    function switchTab(tabId) { 
+      if (tabId === 'settings' && currentUser !== 'admin') return;
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active')); 
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active')); 
+      
+      const targetPane = document.getElementById('tab-' + tabId);
+      if (targetPane) targetPane.classList.add('active'); 
+      
+      const navMap = { dashboard: 'navDashboardBtn', daily: 'navDailyBtn', cook: 'navCookBtn', members: 'navMembersBtn', ledger: 'navLedgerBtn', settings: 'navSettingsBtn' };
+      const targetBtn = document.getElementById(navMap[tabId]);
+      if (targetBtn) targetBtn.classList.add('active');
+
+      if (tabId === 'daily') renderMealBoard(); 
+      if (tabId === 'cook') renderCookBoard(); 
+      if (tabId === 'ledger') renderLedger(); 
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('active'); } 
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    function getBaseStatus(m, dateStr) {
+      if (m.joinDate && dateStr < m.joinDate) {
+        return { b: false, l: false, d: false, gb: 0, gl: 0, gd: 0, eb: 0, el: 0, ed: 0 };
+      }
+      if (!m.statusEvents || m.statusEvents.length === 0) {
+        return { b: true, l: true, d: true, gb: 0, gl: 0, gd: 0, eb: 0, el: 0, ed: 0 };
+      }
+      let sorted = [...m.statusEvents].sort((a,b) => b.date.localeCompare(a.date)); 
+      let activeEvent = sorted.find(e => e.date <= dateStr);
+      if (activeEvent) {
+        return {
+          b: Boolean(activeEvent.b),
+          l: Boolean(activeEvent.l),
+          d: Boolean(activeEvent.d),
+          gb: Math.max(0, parseInt(activeEvent.gb) || 0),
+          gl: Math.max(0, parseInt(activeEvent.gl) || 0),
+          gd: Math.max(0, parseInt(activeEvent.gd) || 0),
+          eb: Math.max(0, parseInt(activeEvent.eb) || 0),
+          el: Math.max(0, parseInt(activeEvent.el) || 0),
+          ed: Math.max(0, parseInt(activeEvent.ed) || 0)
+        };
+      }
+      return { b: true, l: true, d: true, gb: 0, gl: 0, gd: 0, eb: 0, el: 0, ed: 0 };
+    }
+
+    function getEffectiveLog(m, dateStr) { 
+      const base = getBaseStatus(m, dateStr);
+      if (state.mealLogs && state.mealLogs[dateStr] && state.mealLogs[dateStr][m.id]) {
+        return { ...base, ...state.mealLogs[dateStr][m.id] };
+      }
+      return base;
+    }
+
+    function calculateMemberMealsDetailed(m) {
+      let legacy = parseFloat(m.meals) || 0;
+      let own = 0;
+      let guest = 0;
+      if (state.monthStartDate) {
+        let currentStr = state.monthStartDate;
+        let endStr = getTodayStr();
+        if (m.joinDate && m.joinDate > currentStr) currentStr = m.joinDate;
+        let safeguardLimit = 0;
+        while (currentStr <= endStr && safeguardLimit < 3660) {
+          let log = getEffectiveLog(m, currentStr);
+          own += (log.b ? 0.5 : 0) + (log.l ? 1 : 0) + (log.d ? 1 : 0);
+          guest += ((parseInt(log.gb)||0)*0.5) + ((parseInt(log.gl)||0)*1) + ((parseInt(log.gd)||0)*1);
+          currentStr = addDaysToDateStr(currentStr, 1);
+          safeguardLimit++;
+        }
+      }
+      return { total: legacy + own + guest, own: legacy + own, guest, legacy };
+    }
+
+    function calculateMemberMeals(m) {
+      return calculateMemberMealsDetailed(m).total;
+    }
+
+    function calculateMemberEggsDetailed(m) {
+      let legacy = parseFloat(m.eggs) || 0;
+      let daily = 0;
+      if (state.monthStartDate) {
+        let currentStr = state.monthStartDate;
+        let endStr = getTodayStr();
+        if (m.joinDate && m.joinDate > currentStr) currentStr = m.joinDate;
+        let safeguardLimit = 0;
+        while (currentStr <= endStr && safeguardLimit < 3660) {
+          let log = getEffectiveLog(m, currentStr);
+          daily += (parseInt(log.eb) || 0) + (parseInt(log.el) || 0) + (parseInt(log.ed) || 0);
+          currentStr = addDaysToDateStr(currentStr, 1);
+          safeguardLimit++;
+        }
+      }
+      return { total: legacy + daily, legacy, daily };
+    }
+
+    function calculateMemberEggs(m) {
+      return calculateMemberEggsDetailed(m).total;
+    }
+
+    function calculateMealsForMonthDetailed(m, yyyy_mm) {
+      let own = 0;
+      let guest = 0;
+      let [y, month] = yyyy_mm.split('-').map(Number); 
+      let daysInMonth = new Date(y, month, 0).getDate();
+      const todayStr = getTodayStr();
+      const monthPrefix = `${String(y)}-${String(month).padStart(2, '0')}`;
+
+      for (let i = 1; i <= daysInMonth; i++) { 
+        let dateStr = `${monthPrefix}-${String(i).padStart(2, '0')}`; 
+        if (m.joinDate && dateStr < m.joinDate) continue; 
+        if (dateStr > todayStr) continue; 
+        let log = getEffectiveLog(m, dateStr); 
+        own += (log.b ? 0.5 : 0) + (log.l ? 1 : 0) + (log.d ? 1 : 0);
+        guest += ((parseInt(log.gb)||0)*0.5) + ((parseInt(log.gl)||0)*1) + ((parseInt(log.gd)||0)*1); 
+      }
+      return { total: own + guest, own, guest, legacy: 0 };
+    }
+
+    function getCalculations() {
+      const currentExpenses = state.expenses.filter(e => !state.monthStartDate || e.date >= state.monthStartDate); 
+      const totalExpenses = currentExpenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+      let totalMeals = 0, totalEggs = 0, totalDeposits = 0; 
+      state.members.forEach(m => { 
+        totalMeals += calculateMemberMeals(m); 
+        totalEggs += calculateMemberEggs(m); 
+        totalDeposits += (parseFloat(m.deposit) || 0); 
+      });
+      const totalEggSales = totalEggs * (parseFloat(state.eggPrice) || 0); 
+      const pureMealBazaar = Math.max(0, totalExpenses - totalEggSales); 
+      const mealRate = totalMeals > 0 ? (pureMealBazaar / totalMeals) : 0;
+      return { totalExpenses, totalMeals, totalEggs, totalDeposits, totalEggSales, mealRate };
+    }
+    function renderAll() {
+      if (!currentUser) return; 
+      if (currentUser === 'cook') { renderMenuNotice(); renderCookBoard(); return; } 
+      const calc = getCalculations();
+
+      if (currentUser !== 'admin') {
+        const me = state.members.find(x => x.id.toString() === currentUser.toString());
+        if (me) {
+          const mealInfo = calculateMemberMealsDetailed(me);
+          const myMeals = mealInfo.total; 
+          const myMealCost = myMeals * calc.mealRate; 
+          const myEggCount = calculateMemberEggs(me);
+          const myEggCost = myEggCount * state.eggPrice;
+          const myTotalCost = myMealCost + myEggCost; 
+          const myDep = parseFloat(me.deposit) || 0;
+          const myBalance = myDep - myTotalCost;
+          const balClass = myBalance >= 0 ? 'balance-positive' : 'balance-negative'; 
+          const balText = myBalance >= 0 ? `+৳${myBalance.toFixed(2)}` : `-৳${Math.abs(myBalance).toFixed(2)}`;
+          const balLabel = myBalance >= 0 ? `Refund / Available` : `Due Amount`;
+
+          const myReqs = state.depositRequests
+            .filter(r => Number(r.memberId) === Number(me.id))
+            .sort((a, b) => Number(b.id) - Number(a.id))
+            .slice(0, 5);
+          const myReqHtml = myReqs.length > 0 ? `
+            <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(0,122,255,0.18);">
+              <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">My Deposit Requests</div>
+              ${myReqs.map(r => {
+                const badgeColor = r.status === 'approved' ? 'var(--success)' : (r.status === 'rejected' ? 'var(--danger)' : 'var(--gold)');
+                const statusLabel = r.status === 'approved' ? 'Approved' : (r.status === 'rejected' ? 'Rejected' : 'Pending');
+                const noteText = r.note ? ` &bull; ${escapeHTML(r.note)}` : '';
+                const cancelBtn = r.status === 'pending' ? `<button class="btn btn-sm btn-danger" style="padding:3px 8px; font-size:0.72rem;" onclick="cancelDepositRequest(${r.id})">Cancel</button>` : '';
+                return `<div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:8px 10px; border-radius:8px; margin-bottom:6px; border:1px solid var(--border); font-size:0.82rem;">
+                  <div><strong>৳${Number(r.amount).toFixed(2)}</strong> <span style="color:var(--text-muted); font-size:0.75rem;">(${escapeHTML(r.date)}${noteText})</span></div>
+                  <div style="display:flex; align-items:center; gap:6px;"><span style="color:${badgeColor}; font-weight:700; font-size:0.75rem;">${statusLabel}</span>${cancelBtn}</div>
+                </div>`;
+              }).join('')}
+            </div>` : '';
+
+          const myMenuReqs = (state.menuRequests || [])
+            .filter(r => Number(r.memberId) === Number(me.id))
+            .sort((a, b) => Number(b.id) - Number(a.id))
+            .slice(0, 5);
+          const slotLabelMap = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
+          const myMenuReqHtml = myMenuReqs.length > 0 ? `
+            <div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,122,255,0.18);">
+              <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">My Preferred Meal Requests</div>
+              ${myMenuReqs.map(r => {
+                const badgeColor = r.status === 'approved' ? 'var(--success)' : (r.status === 'rejected' ? 'var(--danger)' : 'var(--gold)');
+                const statusLabel = r.status === 'approved' ? 'Approved' : (r.status === 'rejected' ? 'Rejected' : 'Pending');
+                const slotTxt = slotLabelMap[r.mealSlot] || r.mealSlot;
+                const cancelBtn = r.status === 'pending' ? `<button class="btn btn-sm btn-danger" style="padding:3px 8px; font-size:0.72rem;" onclick="cancelMenuRequest(${r.id})">Cancel</button>` : '';
+                return `<div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:8px 10px; border-radius:8px; margin-bottom:6px; border:1px solid var(--border); font-size:0.82rem;">
+                  <div><strong>${escapeHTML(r.dish)}</strong> <span style="color:var(--text-muted); font-size:0.75rem;">(${escapeHTML(r.date)} &bull; ${escapeHTML(slotTxt)})</span></div>
+                  <div style="display:flex; align-items:center; gap:6px;"><span style="color:${badgeColor}; font-weight:700; font-size:0.75rem;">${statusLabel}</span>${cancelBtn}</div>
+                </div>`;
+              }).join('')}
+            </div>` : '';
+
+          document.getElementById('dashPersonalSummary').innerHTML = `
+            <div class="card" style="border: 2px solid var(--accent); background: linear-gradient(to bottom right, #ffffff, #f0f7ff);">
+              <div class="card-title" style="color: var(--accent); margin-bottom: 15px; font-size: 1.05rem;">
+                <span>My Account Overview</span>
+                <div style="display:flex; gap:6px;">
+                  <button class="btn btn-sm btn-gold" onclick="openRequestDepositModal()">+ Request Deposit</button>
+                  <button class="btn btn-sm btn-primary" onclick="generateReceipt(${me.id})">📄 My Bill</button>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div><div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">${balLabel}</div><div class="${balClass}" style="font-size: 1.6rem; font-weight: 800;">${balText}</div></div>
+                <div style="text-align: right;"><div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Total Deposit</div><div style="font-size: 1.1rem; font-weight: 700; color: var(--text);">৳${myDep.toFixed(2)}</div></div>
+              </div>
+              <div class="grid-3" style="background: white; padding: 12px; border-radius: 10px; border: 1px solid rgba(0,122,255,0.2); text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                <div><div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">My Meals</div><div style="font-weight: 800; font-size: 1.1rem; color: var(--text);">${myMeals.toFixed(1)}</div></div>
+                <div style="border-left: 1px solid var(--border); border-right: 1px solid var(--border);"><div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Extra Eggs</div><div style="font-weight: 800; font-size: 1.1rem; color: var(--text);">${myEggCount}</div></div>
+                <div><div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Est. Cost</div><div style="font-weight: 800; font-size: 1.1rem; color: var(--danger);">৳${myTotalCost.toFixed(0)}</div></div>
+              </div>
+              <div style="margin-top:10px;">
+                <button class="btn btn-sm" style="width:100%; background:#fff8e1; color:#8a6d00; border:1px solid #ffe082;" onclick="openMenuRequestModal()">🍽️ Request Preferred Meal</button>
+              </div>
+              ${myReqHtml}
+              ${myMenuReqHtml}
+            </div>`;
+          document.getElementById('dashPersonalSummary').style.display = 'block';
+        }
+        document.getElementById('dashPendingDeviceRequests').style.display = 'none';
+        document.getElementById('dashPendingDeposits').style.display = 'none';
+        document.getElementById('dashPendingMenuRequests').style.display = 'none';
+      } else { 
+        document.getElementById('dashPersonalSummary').style.display = 'none'; 
+        const pendingDevReqs = Object.values(state.adminDeviceRequests || {}).filter(r => r && r.status === 'pending');
+        const devReqEl = document.getElementById('dashPendingDeviceRequests');
+        if (pendingDevReqs.length > 0) {
+          devReqEl.innerHTML = `
+            <div class="card" style="border: 2px solid var(--danger); background: #fff5f5;">
+              <div class="card-title" style="color: var(--danger);">
+                <span>🔐 New Admin Device Login Request (${pendingDevReqs.length})</span>
+              </div>
+              ${pendingDevReqs.map(r => `
+                <div class="ledger-item">
+                  <div>
+                    <div class="ledger-desc">${escapeHTML(r.label || 'Unknown Device')}</div>
+                    <div class="ledger-sub">${escapeHTML(r.timestamp || r.date || '')}</div>
+                  </div>
+                  <div style="display:flex; gap:6px;">
+                    <button class="btn btn-sm btn-success" onclick="approveAdminDevice('${escapeHTML(r.hash)}')">Approve</button>
+                    <button class="btn btn-sm btn-danger" onclick="rejectAdminDevice('${escapeHTML(r.hash)}')">Reject</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>`;
+          devReqEl.style.display = 'block';
+        } else {
+          devReqEl.style.display = 'none';
+        }
+
+        const pendingReqs = state.depositRequests
+          .filter(r => r.status === 'pending')
+          .sort((a, b) => Number(b.id) - Number(a.id));
+        const pendingEl = document.getElementById('dashPendingDeposits');
+        if (pendingReqs.length > 0) {
+          pendingEl.innerHTML = `
+            <div class="card" style="border: 2px solid var(--gold); background: #fffdf5;">
+              <div class="card-title" style="color: #8a6d00;">
+                <span>⏳ Pending Deposit Requests (${pendingReqs.length})</span>
+              </div>
+              ${pendingReqs.map(r => {
+                const reqMember = state.members.find(x => Number(x.id) === Number(r.memberId));
+                const dispName = reqMember ? reqMember.name : r.memberName;
+                const noteHtml = r.note ? `<div style="font-size:0.75rem; color:var(--text-muted);">Note: ${escapeHTML(r.note)}</div>` : '';
+                return `<div class="ledger-item">
+                  <div>
+                    <div class="ledger-desc">${escapeHTML(dispName)} <span class="member-id-badge">#${r.memberId}</span></div>
+                    <div class="ledger-sub">${escapeHTML(r.date)} &bull; <strong style="color:var(--success);">+৳${Number(r.amount).toFixed(2)}</strong></div>
+                    ${noteHtml}
+                  </div>
+                  <div style="display:flex; gap:6px;">
+                    <button class="btn btn-sm btn-success" onclick="approveDepositRequest(${r.id})">Approve</button>
+                    <button class="btn btn-sm btn-danger" onclick="rejectDepositRequest(${r.id})">Reject</button>
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>`;
+          pendingEl.style.display = 'block';
+        } else {
+          pendingEl.style.display = 'none';
+        }
+
+        const pendingMenuReqs = (state.menuRequests || [])
+          .filter(r => r.status === 'pending')
+          .sort((a, b) => Number(b.id) - Number(a.id));
+        const pendingMenuEl = document.getElementById('dashPendingMenuRequests');
+        const slotMap = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
+        if (pendingMenuReqs.length > 0) {
+          pendingMenuEl.innerHTML = `
+            <div class="card" style="border: 2px solid var(--accent); background: #f5f9ff;">
+              <div class="card-title" style="color: var(--accent);">
+                <span>🍽️ Preferred Meal Requests (${pendingMenuReqs.length})</span>
+              </div>
+              ${pendingMenuReqs.map(r => {
+                const reqMember = state.members.find(x => Number(x.id) === Number(r.memberId));
+                const dispName = reqMember ? reqMember.name : r.memberName;
+                const slotTxt = slotMap[r.mealSlot] || r.mealSlot;
+                const noteHtml = r.note ? `<div style="font-size:0.75rem; color:var(--text-muted);">Note: ${escapeHTML(r.note)}</div>` : '';
+                return `<div class="ledger-item">
+                  <div>
+                    <div class="ledger-desc">${escapeHTML(r.dish)}</div>
+                    <div class="ledger-sub">${escapeHTML(dispName)} (#${r.memberId}) &bull; ${escapeHTML(r.date)} &bull; <strong>${escapeHTML(slotTxt)}</strong></div>
+                    ${noteHtml}
+                  </div>
+                  <div style="display:flex; gap:6px;">
+                    <button class="btn btn-sm btn-success" onclick="approveMenuRequest(${r.id})">Approve</button>
+                    <button class="btn btn-sm btn-danger" onclick="rejectMenuRequest(${r.id})">Reject</button>
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>`;
+          pendingMenuEl.style.display = 'block';
+        } else {
+          pendingMenuEl.style.display = 'none';
+        }
+      }
+
+      document.getElementById('dashMealRate').innerText = calc.mealRate.toFixed(2); 
+      document.getElementById('dashTotalExp').innerText = calc.totalExpenses.toLocaleString(); 
+      document.getElementById('dashTotalMeals').innerText = calc.totalMeals.toFixed(1); 
+      document.getElementById('dashTotalEggCost').innerText = calc.totalEggSales.toLocaleString(); 
+      document.getElementById('dashTotalDeposits').innerText = calc.totalDeposits.toLocaleString(); 
+      document.getElementById('dashMessBalance').innerText = (calc.totalDeposits - calc.totalExpenses).toLocaleString();
+
+      const mContainer = document.getElementById('memberList');
+      const searchQ = (document.getElementById('memberSearch')?.value || '').trim().toLowerCase();
+      let membersToRender = currentUser === 'admin' ? state.members : state.members.filter(m => m.id.toString() === currentUser.toString());
+      document.getElementById('rosterCount').innerText = membersToRender.length;
+
+      if (searchQ) membersToRender = membersToRender.filter(m => m.name.toLowerCase().includes(searchQ) || m.id.toString().includes(searchQ));
+      
+      let memberSelectOpts = '';
+      state.members.forEach(m => { memberSelectOpts += `<option value="${m.id}">${escapeHTML(m.name)}</option>`; });
+      const prevSelected = document.getElementById('ledgerMemberSelect').value;
+      document.getElementById('ledgerMemberSelect').innerHTML = memberSelectOpts;
+      if (prevSelected && state.members.some(m => m.id.toString() === prevSelected.toString())) {
+        document.getElementById('ledgerMemberSelect').value = prevSelected;
+      }
+
+      if (membersToRender.length === 0) {
+        mContainer.innerHTML = `<div style="text-align:center; padding: 25px; margin-top: 10px; color: var(--text-muted); background: var(--card); border-radius: 12px; border: 1px dashed #ccc;"><strong>No matching officers found.</strong></div>`;
+      } else {
+        mContainer.innerHTML = membersToRender.map(m => {
+          const dep = parseFloat(m.deposit) || 0;
+          const mealInfo = calculateMemberMealsDetailed(m);
+          const computedMeals = mealInfo.total; 
+          const mealCost = computedMeals * calc.mealRate; 
+          const computedEggs = calculateMemberEggs(m);
+          const eggCost = computedEggs * state.eggPrice; 
+          const totalCost = mealCost + eggCost; 
+          const balance = dep - totalCost;
+          const balClass = balance >= 0 ? 'balance-positive' : 'balance-negative'; 
+          const balText = balance >= 0 ? `+৳${balance.toFixed(2)}` : `-৳${Math.abs(balance).toFixed(2)}`;
+          
+          const statusRefDate = (m.joinDate && m.joinDate > getTodayStr()) ? m.joinDate : getTodayStr();
+          let currStatus = getEffectiveLog(m, statusRefDate); 
+          let guestCount = (parseInt(currStatus.gb)||0) + (parseInt(currStatus.gl)||0) + (parseInt(currStatus.gd)||0); 
+          let statusBadge = '';
+          if (guestCount > 0) statusBadge += `<span style="color:var(--gold); font-size:0.75rem;"> (+Guests)</span>`; 
+          if (!currStatus.b && !currStatus.l && !currStatus.d) statusBadge += `<span style="color:var(--danger); font-size:0.75rem;"> (Meals OFF)</span>`;
+          let autoEggCount = (parseInt(currStatus.eb)||0) + (parseInt(currStatus.el)||0) + (parseInt(currStatus.ed)||0);
+          if (autoEggCount > 0) statusBadge += `<span style="color:#856404; font-size:0.75rem;"> (🥚+${autoEggCount})</span>`;
+          
+          let dueClearBtn = (currentUser === 'admin' && balance < -0.005) ? `<button class="btn btn-sm btn-success" onclick="clearDue(${m.id}, ${Math.abs(balance)})">Clear Due</button>` : '';
+          const adminButtons = currentUser === 'admin' ? `
+            <button class="btn btn-sm btn-gold" onclick="openDepositModal(${m.id})">± Deposit</button>
+            <button class="btn btn-sm" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba;" onclick="quickAddEgg(${m.id})">🥚 +1 Egg</button>
+            <button class="btn btn-sm btn-dark" onclick="openEditModal(${m.id})">Edit</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteMember(${m.id})">Del</button>
+          ` : '';
+          const loginBadge = currentUser === 'admin' ? `<span class="member-id-badge">ID: ${m.id}</span>` : '';
+          const guestSub = mealInfo.guest > 0 ? ` <span style="font-size:0.75rem;">(Own: ${mealInfo.own.toFixed(1)}, Guest: ${mealInfo.guest.toFixed(1)})</span>` : '';
+
+          return `<div class="member-card">
+            <div class="member-header">
+              <span class="member-name">${escapeHTML(m.name)} ${loginBadge} ${statusBadge}</span>
+              <span class="member-balance ${balClass}">${balText}</span>
+            </div>
+            <div class="member-sub">
+              Deposit: <strong>৳${dep.toFixed(2)}</strong> &bull; Meals: <strong>${computedMeals.toFixed(1)}</strong>${guestSub} &bull; Eggs: <strong>${computedEggs}</strong><br>
+              Total Incurred: <strong>৳${totalCost.toFixed(2)}</strong> (Meals: ৳${mealCost.toFixed(0)} + Eggs: ৳${eggCost.toFixed(0)})
+            </div>
+            <div class="member-actions">
+              ${adminButtons} ${dueClearBtn}
+              ${currentUser !== 'admin' ? `<button class="btn btn-sm btn-gold" onclick="openRequestDepositModal()">+ Request Deposit</button>` : ''}
+              <button class="btn btn-sm" style="background:#e5e5ea; color:#333;" onclick="openStatusModal(${m.id})">⚙️ Auto-Meals</button> 
+              <button class="btn btn-sm btn-primary" onclick="generateReceipt(${m.id})">📄 Bill</button>
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      renderMenuNotice();
+      renderAuditLog();
+      renderSecuritySettings();
+      renderMealBoard();
+      renderLedger();
+      renderCookBoard();
+    }
+
+    function renderMenuNotice() {
+      const mn = state.menuNotice || {};
+      const hasContent = Boolean(mn.notice || mn.breakfast || mn.lunch || mn.dinner);
+      const dashCard = document.getElementById('dashMenuNoticeCard');
+      const dailyBanner = document.getElementById('dailyMenuBanner');
+      const cookCard = document.getElementById('cookMenuNoticeCard');
+      if (!hasContent) {
+        if (dashCard) dashCard.style.display = 'none';
+        if (dailyBanner) dailyBanner.style.display = 'none';
+        if (cookCard) cookCard.style.display = 'none';
+        return;
+      }
+      const dateBadge = mn.date ? `<span class="member-id-badge">${escapeHTML(mn.date)}</span>` : '';
+      const noticeHtml = mn.notice ? `<div style="background:#fff8e1; border-left:3px solid var(--gold); padding:8px 10px; border-radius:6px; font-size:0.85rem; margin-bottom:8px;"><strong>📢 Notice:</strong> ${escapeHTML(mn.notice)}</div>` : '';
+      const mealsHtml = (mn.breakfast || mn.lunch || mn.dinner) ? `
+        <div style="font-size:0.83rem; line-height:1.55;">
+          ${mn.breakfast ? `<div><strong>🍳 Breakfast:</strong> ${escapeHTML(mn.breakfast)}</div>` : ''}
+          ${mn.lunch ? `<div><strong>🍛 Lunch:</strong> ${escapeHTML(mn.lunch)}</div>` : ''}
+          ${mn.dinner ? `<div><strong>🍽️ Dinner:</strong> ${escapeHTML(mn.dinner)}</div>` : ''}
+        </div>` : '';
+      const cardHtml = `<div class="card" style="margin-bottom:0;"><div class="card-title"><span>🍽️ Mess Menu &amp; Notice</span>${dateBadge}</div>${noticeHtml}${mealsHtml}</div>`;
+      if (dashCard) { dashCard.innerHTML = cardHtml; dashCard.style.display = 'block'; }
+      if (dailyBanner) { dailyBanner.innerHTML = cardHtml; dailyBanner.style.display = 'block'; }
+
+      const cookNoticeHtml = mn.notice ? `<div style="background:#fff8e1; border-left:3px solid var(--gold); padding:8px 10px; border-radius:6px; font-size:0.85rem; margin-bottom:8px;"><strong>📢 নোটিশ:</strong> ${escapeHTML(mn.notice)}</div>` : '';
+      const cookMealsHtml = (mn.breakfast || mn.lunch || mn.dinner) ? `
+        <div style="font-size:0.85rem; line-height:1.6;">
+          ${mn.breakfast ? `<div><strong>🍳 সকালের নাশতা:</strong> ${escapeHTML(mn.breakfast)}</div>` : ''}
+          ${mn.lunch ? `<div><strong>🍛 দুপুরের খাবার:</strong> ${escapeHTML(mn.lunch)}</div>` : ''}
+          ${mn.dinner ? `<div><strong>🍽️ রাতের খাবার:</strong> ${escapeHTML(mn.dinner)}</div>` : ''}
+        </div>` : '';
+      const cookCardHtml = `<div class="card" style="margin-bottom:0; border:1.5px solid var(--gold);"><div class="card-title"><span>🍽️ নির্ধারিত মেনু ও নোটিশ</span>${dateBadge}</div>${cookNoticeHtml}${cookMealsHtml}</div>`;
+      if (cookCard) { cookCard.innerHTML = cookCardHtml; cookCard.style.display = 'block'; }
+    }
+
+    function renderAuditLog() {
+      const el = document.getElementById('auditLogList');
+      if (!el || currentUser !== 'admin') return;
+      const logs = (state.auditLogs || []).slice(0, 30);
+      if (logs.length === 0) {
+        el.innerHTML = '<div style="font-size:0.85rem; color:var(--text-muted); padding:8px 0;">No admin activity recorded yet.</div>';
+        return;
+      }
+      el.innerHTML = logs.map(l => `
+        <div class="ledger-item" style="padding:8px 0;">
+          <div>
+            <div style="font-size:0.84rem; font-weight:700;">${escapeHTML(l.action)}</div>
+            <div style="font-size:0.78rem; color:var(--text-muted);">${escapeHTML(l.details)}</div>
+          </div>
+          <div style="font-size:0.72rem; color:var(--text-muted); text-align:right; white-space:nowrap; margin-left:8px;">${escapeHTML(l.timestamp || l.date)}</div>
+        </div>
+      `).join('');
+    }
+
+    function quickAddEgg(id) {
+      if (currentUser !== 'admin') return;
+      const m = state.members.find(x => Number(x.id) === Number(id));
+      if (!m) return;
+      m.eggs = (parseFloat(m.eggs) || 0) + 1;
+      saveMemberToDB(m);
+      showToast(`🥚 +1 Egg added for ${m.name} (Total: ${m.eggs})`);
+    }
+
+    /* KITCHEN BOARD & LEDGERS */
+    function setCookDateOffset(days) {
+      const target = addDaysToDateStr(getTodayStr(), days);
+      document.getElementById('cookDate').value = target;
+      renderCookBoard();
+    }
+
+    function renderCookBoard() {
+      const dateStr = document.getElementById('cookDate').value || getTodayStr();
+      const todayStr = getTodayStr();
+      const tomorrowStr = addDaysToDateStr(todayStr, 1);
+      const btnT = document.getElementById('btnCookToday');
+      const btnTm = document.getElementById('btnCookTomorrow');
+      if (btnT && btnTm) {
+        btnT.style.background = dateStr === todayStr ? 'var(--primary)' : '#e5e5ea';
+        btnT.style.color = dateStr === todayStr ? 'white' : '#333';
+        btnTm.style.background = dateStr === tomorrowStr ? 'var(--primary)' : '#e5e5ea';
+        btnTm.style.color = dateStr === tomorrowStr ? 'white' : '#333';
+      }
+      let tb = 0, tl = 0, td = 0;
+      let teb = 0, tel = 0, ted = 0;
+      let listHtml = '';
+      state.members.forEach(m => {
+        if (m.joinDate && dateStr < m.joinDate) return;
+        let log = getEffectiveLog(m, dateStr); 
+        let bCount = (log.b ? 1 : 0) + (parseInt(log.gb) || 0); 
+        let lCount = (log.l ? 1 : 0) + (parseInt(log.gl) || 0); 
+        let dCount = (log.d ? 1 : 0) + (parseInt(log.gd) || 0);
+        let ebCount = parseInt(log.eb) || 0;
+        let elCount = parseInt(log.el) || 0;
+        let edCount = parseInt(log.ed) || 0;
+        tb += bCount; tl += lCount; td += dCount;
+        teb += ebCount; tel += elCount; ted += edCount;
+        if (bCount > 0 || lCount > 0 || dCount > 0 || ebCount > 0 || elCount > 0 || edCount > 0) { 
+          const eggBadges = [
+            ebCount > 0 ? `<span style="display:inline-block; margin-left:6px; margin-top:4px; background:#fff3cd; color:#856404; border:1px solid #ffeeba; padding:3px 7px; border-radius:6px;">🥚 সকালের ডিম: ${ebCount}</span>` : '',
+            elCount > 0 ? `<span style="display:inline-block; margin-left:6px; margin-top:4px; background:#fff3cd; color:#856404; border:1px solid #ffeeba; padding:3px 7px; border-radius:6px;">🥚 দুপুরের ডিম: ${elCount}</span>` : '',
+            edCount > 0 ? `<span style="display:inline-block; margin-left:6px; margin-top:4px; background:#fff3cd; color:#856404; border:1px solid #ffeeba; padding:3px 7px; border-radius:6px;">🥚 রাতের ডিম: ${edCount}</span>` : ''
+          ].join('');
+          listHtml += `<div class="expense-item" style="align-items:center; gap:8px;"><div style="font-weight:700; font-size:0.95rem;">${escapeHTML(m.name)}</div><div style="text-align:right; font-size:0.82rem; color:var(--text-muted); font-weight:600;">${bCount > 0 ? `<span style="display:inline-block; margin-left:6px; background:var(--bg); padding:4px 8px; border-radius:6px;">সকাল: <span style="color:var(--text);">${bCount}</span></span>` : ''}${lCount > 0 ? `<span style="display:inline-block; margin-left:6px; background:var(--bg); padding:4px 8px; border-radius:6px;">দুপুর: <span style="color:var(--text);">${lCount}</span></span>` : ''}${dCount > 0 ? `<span style="display:inline-block; margin-left:6px; background:var(--bg); padding:4px 8px; border-radius:6px;">রাত: <span style="color:var(--text);">${dCount}</span></span>` : ''}${eggBadges ? `<div>${eggBadges}</div>` : ''}</div></div>`; 
+        }
+      });
+      const currentTotalStr = `${tb}-${tl}-${td}-${teb}-${tel}-${ted}`; 
+      const cookTabActive = document.getElementById('tab-cook')?.classList.contains('active');
+      if (window.lastCookTotals && window.lastCookTotals[dateStr] && window.lastCookTotals[dateStr] !== currentTotalStr) { 
+        if (currentUser === 'cook' || cookTabActive) {
+          showToast("🔔 মিল ও ডিমের সংখ্যা আপডেট হয়েছে!"); 
+        }
+      }
+      if (!window.lastCookTotals) window.lastCookTotals = {}; 
+      window.lastCookTotals[dateStr] = currentTotalStr;
+
+      document.getElementById('cookSummary').innerHTML = `
+        <div class="stat-card" style="text-align:center;"><div class="stat-label">সকাল (নাশতা)</div><div class="stat-val" style="font-size:1.8rem; color:var(--accent);">${tb}</div><div style="font-size:0.75rem; color:#856404; font-weight:700; margin-top:4px;">🥚 ডিম: ${teb}</div></div>
+        <div class="stat-card" style="text-align:center;"><div class="stat-label">দুপুর</div><div class="stat-val" style="font-size:1.8rem; color:var(--accent);">${tl}</div><div style="font-size:0.75rem; color:#856404; font-weight:700; margin-top:4px;">🥚 ডিম: ${tel}</div></div>
+        <div class="stat-card" style="text-align:center;"><div class="stat-label">রাত</div><div class="stat-val" style="font-size:1.8rem; color:var(--accent);">${td}</div><div style="font-size:0.75rem; color:#856404; font-weight:700; margin-top:4px;">🥚 ডিম: ${ted}</div></div>`;
+      document.getElementById('cookList').innerHTML = listHtml || '<div style="text-align:center; padding:20px; color:var(--text-muted);">কোনো মিল বা অতিরিক্ত ডিম নির্ধারিত নেই।</div>';
+    }
+
+    function renderMealBoard() {
+      const dateStr = document.getElementById('boardDate').value; 
+      if (!dateStr) return; 
+      const container = document.getElementById('mealBoardList');
+      const membersToRender = currentUser === 'admin' ? state.members : state.members.filter(m => m.id.toString() === currentUser.toString());
+      if (membersToRender.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">No officers in roster.</div>';
+        return;
+      }
+      container.innerHTML = membersToRender.map(m => {
+        const beforeJoin = Boolean(m.joinDate && dateStr < m.joinDate);
+        let log = getEffectiveLog(m, dateStr); 
+        let b = log.b; let l = log.l; let d = log.d; 
+        let gb = log.gb || 0; let gl = log.gl || 0; let gd = log.gd || 0;
+        let eb = log.eb || 0; let el = log.el || 0; let ed = log.ed || 0;
+        
+        const isPast = dateStr < getTodayStr();
+        const isBaseLocked = beforeJoin || (currentUser !== 'admin' && (currentUser.toString() !== m.id.toString() || isPast));
+        const bCutoffLocked = !isBaseLocked && currentUser !== 'admin' && isSameDayCutoffPassed(dateStr, 'b');
+        const lCutoffLocked = !isBaseLocked && currentUser !== 'admin' && isSameDayCutoffPassed(dateStr, 'l');
+        const dCutoffLocked = !isBaseLocked && currentUser !== 'admin' && isSameDayCutoffPassed(dateStr, 'd');
+        const gbCutoffLocked = !isBaseLocked && currentUser !== 'admin' && isSameDayCutoffPassed(dateStr, 'gb');
+        const glCutoffLocked = !isBaseLocked && currentUser !== 'admin' && isSameDayCutoffPassed(dateStr, 'gl');
+        const gdCutoffLocked = !isBaseLocked && currentUser !== 'admin' && isSameDayCutoffPassed(dateStr, 'gd');
+        const ebCutoffLocked = !isBaseLocked && currentUser !== 'admin' && isSameDayCutoffPassed(dateStr, 'eb');
+        const elCutoffLocked = !isBaseLocked && currentUser !== 'admin' && isSameDayCutoffPassed(dateStr, 'el');
+        const edCutoffLocked = !isBaseLocked && currentUser !== 'admin' && isSameDayCutoffPassed(dateStr, 'ed');
+
+        const baseReason = beforeJoin ? `Officer joined on ${m.joinDate}.` : 'Past meals cannot be altered.';
+        const bClk = isBaseLocked ? `onclick="showToast('${baseReason}')"` : (bCutoffLocked ? `onclick="showToast('⏳ Cutoff passed for ${MEAL_CUTOFF_LABELS.b}')"` : `onclick="toggleMeal('${dateStr}', ${m.id}, 'b')"`);
+        const lClk = isBaseLocked ? `onclick="showToast('${baseReason}')"` : (lCutoffLocked ? `onclick="showToast('⏳ Cutoff passed for ${MEAL_CUTOFF_LABELS.l}')"` : `onclick="toggleMeal('${dateStr}', ${m.id}, 'l')"`);
+        const dClk = isBaseLocked ? `onclick="showToast('${baseReason}')"` : (dCutoffLocked ? `onclick="showToast('⏳ Cutoff passed for ${MEAL_CUTOFF_LABELS.d}')"` : `onclick="toggleMeal('${dateStr}', ${m.id}, 'd')"`);
+
+        const gbDis = (isBaseLocked || gbCutoffLocked) ? 'disabled' : '';
+        const glDis = (isBaseLocked || glCutoffLocked) ? 'disabled' : '';
+        const gdDis = (isBaseLocked || gdCutoffLocked) ? 'disabled' : '';
+        const ebDis = (isBaseLocked || ebCutoffLocked) ? 'disabled' : '';
+        const elDis = (isBaseLocked || elCutoffLocked) ? 'disabled' : '';
+        const edDis = (isBaseLocked || edCutoffLocked) ? 'disabled' : '';
+        const joinSub = beforeJoin ? ` <span class="member-id-badge">Joined ${escapeHTML(m.joinDate)}</span>` : '';
+
+        return `<div class="meal-board-card"><div style="font-weight:700; margin-bottom:8px;">${escapeHTML(m.name)}${joinSub}</div><div class="grid-3"><div class="meal-toggle ${b ? 'on' : ''} ${(isBaseLocked || bCutoffLocked) ? 'disabled' : ''}" ${bClk}>Breakfast<br><small>(0.5)</small></div><div class="meal-toggle ${l ? 'on' : ''} ${(isBaseLocked || lCutoffLocked) ? 'disabled' : ''}" ${lClk}>Lunch<br><small>(1.0)</small></div><div class="meal-toggle ${d ? 'on' : ''} ${(isBaseLocked || dCutoffLocked) ? 'disabled' : ''}" ${dClk}>Dinner<br><small>(1.0)</small></div></div><div class="guest-input-wrap"><span style="margin-right:5px;">Guests:</span><div><small>B</small> <input type="number" class="guest-input" min="0" value="${gb}" ${gbDis} onchange="updateGuest('${dateStr}', ${m.id}, 'gb', this.value)"></div><div><small>L</small> <input type="number" class="guest-input" min="0" value="${gl}" ${glDis} onchange="updateGuest('${dateStr}', ${m.id}, 'gl', this.value)"></div><div><small>D</small> <input type="number" class="guest-input" min="0" value="${gd}" ${gdDis} onchange="updateGuest('${dateStr}', ${m.id}, 'gd', this.value)"></div></div><div class="guest-input-wrap" style="background:#fff9e6; margin-top:6px;"><span style="margin-right:5px; color:#856404;">🥚 Eggs:</span><div><small>B</small> <input type="number" class="guest-input" min="0" value="${eb}" ${ebDis} onchange="updateExtraEgg('${dateStr}', ${m.id}, 'eb', this.value)"></div><div><small>L</small> <input type="number" class="guest-input" min="0" value="${el}" ${elDis} onchange="updateExtraEgg('${dateStr}', ${m.id}, 'el', this.value)"></div><div><small>D</small> <input type="number" class="guest-input" min="0" value="${ed}" ${edDis} onchange="updateExtraEgg('${dateStr}', ${m.id}, 'ed', this.value)"></div></div></div>`;
+      }).join('');
+    }
+
+    function toggleMeal(dateStr, mId, mealType) { 
+      const m = state.members.find(x => Number(x.id) === Number(mId)); 
+      if (!m) return;
+      if (m.joinDate && dateStr < m.joinDate) { showToast(`Officer joined on ${m.joinDate}.`); return; }
+      if (currentUser !== 'admin' && (currentUser.toString() !== m.id.toString() || dateStr < getTodayStr())) {
+        showToast("Past meals cannot be altered.");
+        return;
+      }
+      
+      if (currentUser !== 'admin' && isSameDayCutoffPassed(dateStr, mealType)) {
+        showToast(`⏳ Cutoff passed for ${MEAL_CUTOFF_LABELS[mealType]}`);
+        return;
+      }
+      let log = getEffectiveLog(m, dateStr); 
+      log[mealType] = !log[mealType]; 
+      db.ref(`mess_data/mealLogs/${dateStr}/${mId}`).set(log); 
+    }
+
+    function updateGuest(dateStr, mId, mealType, val) { 
+      const m = state.members.find(x => Number(x.id) === Number(mId)); 
+      if (!m) return;
+      if (m.joinDate && dateStr < m.joinDate) { showToast(`Officer joined on ${m.joinDate}.`); return; }
+      if (currentUser !== 'admin' && (currentUser.toString() !== m.id.toString() || dateStr < getTodayStr())) {
+        showToast("Past meals cannot be altered.");
+        renderMealBoard();
+        return;
+      }
+      if (currentUser !== 'admin' && isSameDayCutoffPassed(dateStr, mealType)) {
+        showToast(`⏳ Cutoff passed for ${MEAL_CUTOFF_LABELS[mealType]}`);
+        renderMealBoard();
+        return;
+      }
+
+      let log = getEffectiveLog(m, dateStr); 
+      const newCount = Math.max(0, parseInt(val) || 0);
+      log[mealType] = newCount; 
+      db.ref(`mess_data/mealLogs/${dateStr}/${mId}`).set(log); 
+    }
+
+    function updateExtraEgg(dateStr, mId, eggKey, val) {
+      const m = state.members.find(x => Number(x.id) === Number(mId));
+      if (!m) return;
+      if (m.joinDate && dateStr < m.joinDate) { showToast(`Officer joined on ${m.joinDate}.`); return; }
+      if (currentUser !== 'admin' && (currentUser.toString() !== m.id.toString() || dateStr < getTodayStr())) {
+        showToast("Past meals cannot be altered.");
+        renderMealBoard();
+        return;
+      }
+      if (currentUser !== 'admin' && isSameDayCutoffPassed(dateStr, eggKey)) {
+        showToast(`⏳ Cutoff passed for ${MEAL_CUTOFF_LABELS[eggKey]}`);
+        renderMealBoard();
+        return;
+      }
+      let log = getEffectiveLog(m, dateStr);
+      log[eggKey] = Math.max(0, parseInt(val) || 0);
+      db.ref(`mess_data/mealLogs/${dateStr}/${mId}`).set(log);
+    }
+    
+    function openStatusModal(id) { 
+      const m = state.members.find(x => Number(x.id) === Number(id)); 
+      if (!m) return;
+      if (currentUser !== 'admin' && currentUser.toString() !== m.id.toString()) return;
+
+      const todayStr = getTodayStr();
+      const minAllowedDate = (m.joinDate && m.joinDate > todayStr) ? m.joinDate : todayStr;
+      const startEl = document.getElementById('statusStart');
+      const endEl = document.getElementById('statusEnd');
+      document.getElementById('statusMemberId').value = id; 
+      startEl.value = minAllowedDate; 
+      endEl.value = ''; 
+
+      // Lock past dates (and pre-period dates after month close) for standard officers
+      if (currentUser !== 'admin') {
+        startEl.min = minAllowedDate;
+        endEl.min = minAllowedDate;
+      } else {
+        startEl.removeAttribute('min');
+        endEl.removeAttribute('min');
+      }
+
+      let curr = getBaseStatus(m, minAllowedDate); 
+      document.getElementById('statusB').checked = curr.b; 
+      document.getElementById('statusL').checked = curr.l; 
+      document.getElementById('statusD').checked = curr.d; 
+      document.getElementById('statusGB').value = curr.gb || 0; 
+      document.getElementById('statusGL').value = curr.gl || 0; 
+      document.getElementById('statusGD').value = curr.gd || 0;
+      document.getElementById('statusEB').value = curr.eb || 0;
+      document.getElementById('statusEL').value = curr.el || 0;
+      document.getElementById('statusED').value = curr.ed || 0; 
+      openModal('statusModal'); 
+    }
+
+    function applyStatus() { 
+      const mId = parseInt(document.getElementById('statusMemberId').value); 
+      const m = state.members.find(x => Number(x.id) === Number(mId)); 
+      if (!m) return;
+      if (currentUser !== 'admin' && currentUser.toString() !== m.id.toString()) return;
+
+      const todayStr = getTodayStr();
+      const start = document.getElementById('statusStart').value; 
+      const end = document.getElementById('statusEnd').value; 
+      if (!start) { showToast("⚠️ Start Date is required"); return; } 
+      const minAllowedDate = (m.joinDate && m.joinDate > todayStr) ? m.joinDate : todayStr;
+      if (currentUser !== 'admin' && start < minAllowedDate) {
+        showToast(m.joinDate && m.joinDate > todayStr ? `⚠️ Next period starts on ${m.joinDate}` : "⚠️ Standard officers cannot alter past dates");
+        return;
+      }
+      if (end && end < start) {
+        showToast("⚠️ End Date cannot be earlier than Start Date");
+        return;
+      }
+
+      if (!m.statusEvents) m.statusEvents = []; 
+      const b = document.getElementById('statusB').checked; 
+      const l = document.getElementById('statusL').checked; 
+      const d = document.getElementById('statusD').checked; 
+      const gb = Math.max(0, parseInt(document.getElementById('statusGB').value) || 0); 
+      const gl = Math.max(0, parseInt(document.getElementById('statusGL').value) || 0); 
+      const gd = Math.max(0, parseInt(document.getElementById('statusGD').value) || 0); 
+      const eb = Math.max(0, parseInt(document.getElementById('statusEB').value) || 0);
+      const el = Math.max(0, parseInt(document.getElementById('statusEL').value) || 0);
+      const ed = Math.max(0, parseInt(document.getElementById('statusED').value) || 0);
+
+      const prevTodayLog = getEffectiveLog(m, todayStr);
+      let lockedTodayOverride = null;
+
+      if (currentUser !== 'admin' && start === todayStr) {
+        const lockB = isSameDayCutoffPassed(todayStr, 'b') && b !== Boolean(prevTodayLog.b);
+        const lockL = isSameDayCutoffPassed(todayStr, 'l') && l !== Boolean(prevTodayLog.l);
+        const lockD = isSameDayCutoffPassed(todayStr, 'd') && d !== Boolean(prevTodayLog.d);
+        const prevGB = parseInt(prevTodayLog.gb) || 0;
+        const prevGL = parseInt(prevTodayLog.gl) || 0;
+        const prevGD = parseInt(prevTodayLog.gd) || 0;
+        const prevEB = parseInt(prevTodayLog.eb) || 0;
+        const prevEL = parseInt(prevTodayLog.el) || 0;
+        const prevED = parseInt(prevTodayLog.ed) || 0;
+        const lockGB = isSameDayCutoffPassed(todayStr, 'gb') && gb !== prevGB;
+        const lockGL = isSameDayCutoffPassed(todayStr, 'gl') && gl !== prevGL;
+        const lockGD = isSameDayCutoffPassed(todayStr, 'gd') && gd !== prevGD;
+        const lockEB = isSameDayCutoffPassed(todayStr, 'eb') && eb !== prevEB;
+        const lockEL = isSameDayCutoffPassed(todayStr, 'el') && el !== prevEL;
+        const lockED = isSameDayCutoffPassed(todayStr, 'ed') && ed !== prevED;
+
+        if (lockB || lockL || lockD || lockGB || lockGL || lockGD || lockEB || lockEL || lockED) {
+          if (end === todayStr) {
+            const blockedMeals = [];
+            if (lockB || lockGB || lockEB) blockedMeals.push('Breakfast (5:00 AM)');
+            if (lockL || lockGL || lockEL) blockedMeals.push('Lunch (10:00 AM)');
+            if (lockD || lockGD || lockED) blockedMeals.push('Dinner (5:00 PM)');
+            showToast(`⏳ Cutoff passed for today's ${blockedMeals.join(', ')}`);
+            return;
+          }
+          lockedTodayOverride = {
+            b: lockB ? Boolean(prevTodayLog.b) : b,
+            l: lockL ? Boolean(prevTodayLog.l) : l,
+            d: lockD ? Boolean(prevTodayLog.d) : d,
+            gb: lockGB ? prevGB : gb,
+            gl: lockGL ? prevGL : gl,
+            gd: lockGD ? prevGD : gd,
+            eb: lockEB ? prevEB : eb,
+            el: lockEL ? prevEL : el,
+            ed: lockED ? prevED : ed
+          };
+        }
+      }
+
+      let updates = {};
+      if (end) {
+        let resumeDate = addDaysToDateStr(end, 1);
+        let priorResumeStatus = getBaseStatus(m, resumeDate);
+        // Remove any intermediate statusEvents inside [start, resumeDate] so nothing overrides mid-range
+        m.statusEvents = m.statusEvents.filter(e => e.date < start || e.date > resumeDate);
+        m.statusEvents.push({ date: start, b, l, d, gb, gl, gd, eb, el, ed });
+        m.statusEvents.push({
+          date: resumeDate,
+          b: priorResumeStatus.b ?? true,
+          l: priorResumeStatus.l ?? true,
+          d: priorResumeStatus.d ?? true,
+          gb: priorResumeStatus.gb || 0,
+          gl: priorResumeStatus.gl || 0,
+          gd: priorResumeStatus.gd || 0,
+          eb: priorResumeStatus.eb || 0,
+          el: priorResumeStatus.el || 0,
+          ed: priorResumeStatus.ed || 0
+        });
+        // Clear conflicting single-day mealLogs in [start, end] so the new auto-schedule takes effect
+        if (state.mealLogs) {
+          Object.keys(state.mealLogs).forEach(dStr => {
+            if (dStr >= start && dStr <= end && state.mealLogs[dStr] && state.mealLogs[dStr][m.id]) {
+              updates[`mealLogs/${dStr}/${m.id}`] = null;
+            }
+          });
+        }
+      } else {
+        // Open-ended schedule: clear any future statusEvents from start onward
+        m.statusEvents = m.statusEvents.filter(e => e.date < start);
+        m.statusEvents.push({ date: start, b, l, d, gb, gl, gd, eb, el, ed });
+        if (state.mealLogs) {
+          Object.keys(state.mealLogs).forEach(dStr => {
+            if (dStr >= start && state.mealLogs[dStr] && state.mealLogs[dStr][m.id]) {
+              updates[`mealLogs/${dStr}/${m.id}`] = null;
+            }
+          });
+        }
+      }
+
+      if (lockedTodayOverride) {
+        updates[`mealLogs/${todayStr}/${m.id}`] = lockedTodayOverride;
+      }
+
+      const mKey = m._key !== undefined ? m._key : String(m.id);
+      updates[`members/${mKey}`] = stripInternalKeys(m);
+      db.ref('mess_data').update(updates);
+      closeModal('statusModal'); 
+      showToast(lockedTodayOverride ? "✅ Schedule saved (Today's passed cutoffs kept active)" : "✅ Auto-schedule updated"); 
+    }
+
+    function clearAllStatuses() { 
+      const mId = parseInt(document.getElementById('statusMemberId').value); 
+      const m = state.members.find(x => Number(x.id) === Number(mId)); 
+      if (!m) return;
+      if (currentUser !== 'admin' && currentUser.toString() !== m.id.toString()) return;
+
+      openConfirmModal(
+        "Reset Auto-Meals Schedule",
+        "Reset this officer to default (All Meals ON, 0 Guests) from today onward?",
+        () => {
+          const todayStr = getTodayStr();
+          const effectiveStart = (m.joinDate && m.joinDate > todayStr) ? m.joinDate : todayStr;
+          const prevTodayLog = getEffectiveLog(m, todayStr);
+          let updates = {};
+          if (currentUser === 'admin') {
+            m.statusEvents = [];
+          } else {
+            // Preserve past events before effectiveStart so standard officers cannot retroactively rewrite past leave
+            m.statusEvents = (m.statusEvents || []).filter(e => e.date < effectiveStart);
+            m.statusEvents.push({ date: effectiveStart, b: true, l: true, d: true, gb: 0, gl: 0, gd: 0, eb: 0, el: 0, ed: 0 });
+          }
+          if (state.mealLogs) {
+            Object.keys(state.mealLogs).forEach(dStr => {
+              if (dStr >= effectiveStart && state.mealLogs[dStr] && state.mealLogs[dStr][m.id]) {
+                updates[`mealLogs/${dStr}/${m.id}`] = null;
+              }
+            });
+          }
+          // Preserve today's meal, guest & extra-egg state for any slot whose cutoff has already passed
+          if (currentUser !== 'admin') {
+            const lockB = isSameDayCutoffPassed(todayStr, 'b') && !prevTodayLog.b;
+            const lockL = isSameDayCutoffPassed(todayStr, 'l') && !prevTodayLog.l;
+            const lockD = isSameDayCutoffPassed(todayStr, 'd') && !prevTodayLog.d;
+            const keepGB = isSameDayCutoffPassed(todayStr, 'gb') ? (parseInt(prevTodayLog.gb) || 0) : 0;
+            const keepGL = isSameDayCutoffPassed(todayStr, 'gl') ? (parseInt(prevTodayLog.gl) || 0) : 0;
+            const keepGD = isSameDayCutoffPassed(todayStr, 'gd') ? (parseInt(prevTodayLog.gd) || 0) : 0;
+            const keepEB = isSameDayCutoffPassed(todayStr, 'eb') ? (parseInt(prevTodayLog.eb) || 0) : 0;
+            const keepEL = isSameDayCutoffPassed(todayStr, 'el') ? (parseInt(prevTodayLog.el) || 0) : 0;
+            const keepED = isSameDayCutoffPassed(todayStr, 'ed') ? (parseInt(prevTodayLog.ed) || 0) : 0;
+            if (lockB || lockL || lockD || keepGB > 0 || keepGL > 0 || keepGD > 0 || keepEB > 0 || keepEL > 0 || keepED > 0) {
+              updates[`mealLogs/${todayStr}/${m.id}`] = {
+                b: !lockB,
+                l: !lockL,
+                d: !lockD,
+                gb: keepGB,
+                gl: keepGL,
+                gd: keepGD,
+                eb: keepEB,
+                el: keepEL,
+                ed: keepED
+              };
+            }
+          }
+          const mKey = m._key !== undefined ? m._key : String(m.id);
+          updates[`members/${mKey}`] = stripInternalKeys(m);
+          db.ref('mess_data').update(updates);
+          closeModal('statusModal');
+          showToast("✅ Schedule reset to default");
+        }
+      );
+    }
+    function setLedgerView(view) { 
+      currentLedgerView = view; 
+      document.getElementById('btnLedgerExp').style.background = view==='expenses' ? 'var(--primary)' : '#e5e5ea'; 
+      document.getElementById('btnLedgerExp').style.color = view==='expenses' ? 'white' : '#333'; 
+      document.getElementById('btnLedgerAcc').style.background = view==='accounts' ? 'var(--primary)' : '#e5e5ea'; 
+      document.getElementById('btnLedgerAcc').style.color = view==='accounts' ? 'white' : '#333'; 
+      document.getElementById('ledgerExpView').style.display = view==='expenses' ? 'block' : 'none'; 
+      document.getElementById('ledgerAccView').style.display = view==='accounts' ? 'block' : 'none'; 
+      renderLedger(); 
+    }
+
+    function renderLedger() {
+      const monthVal = document.getElementById('ledgerMonth').value; 
+      if (!monthVal) return;
+
+      const calc = getCalculations();
+      const activePeriodMonth = (state.monthStartDate || getTodayStr()).substring(0, 7);
+      const archivedPeriod = state.history && state.history[monthVal] ? state.history[monthVal] : null;
+      const isCurrentActiveMonth = (monthVal === activePeriodMonth);
+
+      if (currentLedgerView === 'expenses') {
+        const monthExps = state.expenses.filter(e => e.date && e.date.startsWith(monthVal)).sort((a,b) => b.date.localeCompare(a.date));
+        let cats = {}; let totalExp = 0; 
+        monthExps.forEach(e => { 
+          let c = e.category || 'Misc'; cats[c] = (cats[c] || 0) + (parseFloat(e.amount) || 0); totalExp += (parseFloat(e.amount) || 0); 
+        });
+        let sumHtml = ''; 
+        for (const [c, amt] of Object.entries(cats)) { sumHtml += `<div style="display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid var(--border);"><span>${escapeHTML(c)}</span><strong>৳${amt.toLocaleString()}</strong></div>`; }
+        sumHtml += `<div style="display:flex; justify-content:space-between; padding:6px; background:var(--bg); border-radius:6px; margin-top:8px;"><strong>TOTAL</strong><strong style="color:var(--danger)">৳${totalExp.toLocaleString()}</strong></div>`;
+        document.getElementById('ledgerCatSummary').innerHTML = monthExps.length ? sumHtml : '<div style="padding:10px;">No expenses logged.</div>';
+        document.getElementById('ledgerExpenseList').innerHTML = monthExps.map(e => `<div class="ledger-item"><div><div class="ledger-desc">${escapeHTML(e.desc)}</div><div class="ledger-sub"><span class="cat-badge">${escapeHTML(e.category || 'Misc')}</span> ${e.date}</div></div><div style="display:flex; align-items:center; gap:8px;"><span class="ledger-amt">৳${e.amount}</span> ${currentUser === 'admin' ? `<button class="btn btn-sm btn-dark" style="padding:4px 8px;" onclick="openEditExp(${e.id})">Edit</button><button class="btn btn-sm btn-danger" style="padding:4px 8px;" onclick="deleteExpense(${e.id})">&times;</button>` : ''}</div></div>`).join('') || '<div style="padding:10px;">No expenses for this month.</div>';
+      } else {
+        let mId = currentUser === 'admin' ? parseInt(document.getElementById('ledgerMemberSelect').value) : currentUser; 
+        if (!mId && state.members.length > 0) mId = state.members[0].id;
+        const m = state.members.find(x => x.id.toString() === (mId ? mId.toString() : '')); 
+        if (!m) {
+          document.getElementById('ledgerMealSummary').innerHTML = '<div style="padding:10px;">No officer selected.</div>';
+          document.getElementById('transactionList').innerHTML = '<div style="padding:10px;">No transactions found.</div>';
+          return;
+        }
+
+        // If viewing an archived month with a saved member snapshot, display exact archived bill figures
+        if (archivedPeriod && archivedPeriod.memberSnapshots && archivedPeriod.memberSnapshots[m.id] && !isCurrentActiveMonth) {
+          const snap = archivedPeriod.memberSnapshots[m.id];
+          const snapRate = parseFloat(archivedPeriod.mealRate) || 0;
+          const snapTitle = escapeHTML(archivedPeriod.title || monthVal);
+          document.getElementById('ledgerMealSummary').innerHTML = `
+            <div class="receipt-row"><span>Archived Period:</span> <strong>${snapTitle}</strong></div>
+            <div class="receipt-row"><span>Meal Rate:</span> <strong>৳${snapRate.toFixed(2)}</strong></div>
+            <div class="receipt-row"><span>Total Meals Billed:</span> <strong>${(parseFloat(snap.meals)||0).toFixed(1)}</strong></div>
+            <div class="receipt-row"><span>Meal Charge:</span> <strong>৳${(parseFloat(snap.mealCost)||0).toFixed(2)}</strong></div>
+            <div class="receipt-row"><span>Extra Eggs (${snap.eggs || 0}):</span> <strong>৳${(parseFloat(snap.eggCost)||0).toFixed(2)}</strong></div>
+            <div class="receipt-row" style="margin-top:8px; padding-top:8px; border-top:1px dashed #ccc;"><span><strong>Total Period Charge:</strong></span> <strong style="color:var(--danger);">৳${(parseFloat(snap.totalCost)||0).toFixed(2)}</strong></div>
+          `;
+        } else if (isCurrentActiveMonth) {
+          // Match Dashboard and Official Bill calculation for the active period
+          const mealInfo = calculateMemberMealsDetailed(m);
+          const mMeals = mealInfo.total;
+          const mMealCost = mMeals * calc.mealRate;
+          const mEggCount = calculateMemberEggs(m);
+          const mEggCost = mEggCount * (parseFloat(state.eggPrice) || 0);
+          const mTotalCost = mMealCost + mEggCost;
+          const mealBreakdown = mealInfo.guest > 0 ? `${mMeals.toFixed(1)} (Own: ${mealInfo.own.toFixed(1)}, Guest: ${mealInfo.guest.toFixed(1)})` : mMeals.toFixed(1);
+
+          let midMonthHtml = '';
+          if (archivedPeriod && archivedPeriod.memberSnapshots && archivedPeriod.memberSnapshots[m.id] && (!archivedPeriod.closedDate || archivedPeriod.closedDate < state.monthStartDate)) {
+            const snap = archivedPeriod.memberSnapshots[m.id];
+            const snapRate = parseFloat(archivedPeriod.mealRate) || 0;
+            const snapTitle = escapeHTML(archivedPeriod.title || monthVal);
+            const snapDates = (archivedPeriod.startDate && archivedPeriod.closedDate) ? ` (${escapeHTML(archivedPeriod.startDate)} to ${escapeHTML(archivedPeriod.closedDate)})` : '';
+            midMonthHtml = `
+              <div style="margin-top:12px; padding-top:12px; border-top:2px dashed var(--border);">
+                <div class="receipt-row"><span><strong>Closed Period:</strong> ${snapTitle}${snapDates}</span></div>
+                <div class="receipt-row"><span>Archived Meal Rate:</span> <strong>৳${snapRate.toFixed(2)}</strong></div>
+                <div class="receipt-row"><span>Meals Billed:</span> <strong>${(parseFloat(snap.meals)||0).toFixed(1)}</strong></div>
+                <div class="receipt-row"><span>Meal Charge:</span> <strong>৳${(parseFloat(snap.mealCost)||0).toFixed(2)}</strong></div>
+                <div class="receipt-row"><span>Extra Eggs (${snap.eggs || 0}):</span> <strong>৳${(parseFloat(snap.eggCost)||0).toFixed(2)}</strong></div>
+                <div class="receipt-row"><span><strong>Closed Period Total:</strong></span> <strong style="color:var(--danger);">৳${(parseFloat(snap.totalCost)||0).toFixed(2)}</strong></div>
+              </div>
+            `;
+          }
+
+          document.getElementById('ledgerMealSummary').innerHTML = `
+            <div class="receipt-row"><span>Active Period (${escapeHTML(state.month || 'Current')}):</span> <strong>Since ${escapeHTML(state.monthStartDate)}</strong></div>
+            <div class="receipt-row"><span>Current Meal Rate:</span> <strong>৳${calc.mealRate.toFixed(2)}</strong></div>
+            <div class="receipt-row"><span>Active Period Meals:</span> <strong>${mealBreakdown}</strong></div>
+            <div class="receipt-row"><span>Meal Charge:</span> <strong>৳${mMealCost.toFixed(2)}</strong></div>
+            <div class="receipt-row"><span>Extra Eggs (${mEggCount} &times; ৳${state.eggPrice}):</span> <strong>৳${mEggCost.toFixed(2)}</strong></div>
+            <div class="receipt-row" style="margin-top:8px; padding-top:8px; border-top:1px dashed #ccc;"><span><strong>Total Active Charges:</strong></span> <strong style="color:var(--danger);">৳${mTotalCost.toFixed(2)}</strong></div>
+            ${midMonthHtml}
+          `;
+        } else {
+          const histRate = archivedPeriod ? (parseFloat(archivedPeriod.mealRate) || 0) : calc.mealRate;
+          const histTitle = archivedPeriod ? escapeHTML(archivedPeriod.title || monthVal) : "Selected Month";
+          const mMeals = calculateMealsForMonthDetailed(m, monthVal).total;
+          const mCost = mMeals * histRate;
+          document.getElementById('ledgerMealSummary').innerHTML = `
+            <div class="receipt-row"><span>Meal Rate (${histTitle}):</span> <strong>৳${histRate.toFixed(2)}</strong></div>
+            <div class="receipt-row"><span>Meals Logged (${monthVal}):</span> <strong>${mMeals.toFixed(1)}</strong></div>
+            <div class="receipt-row" style="margin-top:8px; padding-top:8px; border-top:1px dashed #ccc;"><span><strong>Total Meal Charge:</strong></span> <strong style="color:var(--danger);">৳${mCost.toFixed(2)}</strong></div>
+          `;
+        }
+
+        const monthTxs = state.transactions.filter(t => Number(t.memberId) === Number(m.id) && t.date && t.date.startsWith(monthVal)).sort((a,b) => b.date.localeCompare(a.date));
+        document.getElementById('transactionList').innerHTML = monthTxs.map(t => `<div class="ledger-item"><div><div class="ledger-desc">${escapeHTML(t.desc)}</div><div class="ledger-sub">${t.date}</div></div><div style="display:flex; align-items:center; gap:8px;"><span class="ledger-amt ${t.amount >= 0 ? 'amt-pos' : 'amt-neg'}">${t.amount >= 0 ? '+' : ''}৳${Number(t.amount).toFixed(2)}</span> ${currentUser === 'admin' ? `<button class="btn btn-sm btn-dark" style="padding:4px 8px;" onclick="openEditTx(${t.id})">Edit</button><button class="btn btn-sm btn-danger" style="padding:4px 8px;" onclick="deleteTx(${t.id})">&times;</button>` : ''}</div></div>`).join('') || '<div style="padding:10px;">No transactions for this month.</div>';
+      }
+    }
+    function addMember() { 
+      if (currentUser !== 'admin') return;
+      const name = document.getElementById('mName').value.trim(); 
+      const deposit = parseFloat(document.getElementById('mDeposit').value) || 0; 
+      const meals = Math.max(0, parseFloat(document.getElementById('mMeals').value) || 0); 
+      const eggs = Math.max(0, parseFloat(document.getElementById('mEggs').value) || 0); 
+      if (!name) { showToast("⚠️ Please enter the Officer's Rank & Name"); return; }
+
+      const id = generateSecureFourDigitId(state.members);
+      const todayStr = getTodayStr();
+      const joinDate = (state.monthStartDate && state.monthStartDate > todayStr) ? state.monthStartDate : todayStr;
+      const newMember = { id, name, deposit, meals, eggs, joinDate, statusEvents: [] };
+      let updates = {};
+      updates[`members/${id}`] = newMember;
+
+      if (deposit !== 0) {
+        const txId = generateUniqueTimestampId(state.transactions);
+        updates[`transactions/${txId}`] = { id: txId, date: todayStr, memberId: id, amount: deposit, desc: 'Initial Deposit' };
+      }
+
+      document.getElementById('mName').value = '';
+      document.getElementById('mDeposit').value = '';
+      document.getElementById('mMeals').value = '';
+      document.getElementById('mEggs').value = '';
+      db.ref('mess_data').update(updates);
+      logAudit('Officer Added', `${name} (#${id}), Initial Deposit: ৳${deposit}`);
+      showToast(`✅ Added ${name} (ID: ${id})`);
+    }
+
+    function applyDepositAdjustment(type) { 
+      if (currentUser !== 'admin') return;
+      const amt = parseFloat(document.getElementById('adjAmount').value) || 0; 
+      if (amt <= 0) { showToast("⚠️ Enter a valid positive amount"); return; }
+      const mId = parseInt(document.getElementById('adjMemberId').value); 
+      const m = state.members.find(x => Number(x.id) === Number(mId)); 
+      if (m) { 
+        let finalAmt = type === 'add' ? amt : -amt; 
+        m.deposit = (parseFloat(m.deposit) || 0) + finalAmt; 
+        const txId = generateUniqueTimestampId(state.transactions);
+        const newTx = { id: txId, date: getTodayStr(), memberId: mId, amount: finalAmt, desc: type === 'add' ? 'Mess Deposit' : 'Deposit Deduction' };
+        const mKey = m._key !== undefined ? m._key : String(m.id);
+        db.ref('mess_data').update({
+          [`members/${mKey}/deposit`]: m.deposit,
+          [`transactions/${txId}`]: newTx
+        });
+        closeModal('depositModal');
+        logAudit(type === 'add' ? 'Deposit Added' : 'Deposit Deducted', `${m.name}: ৳${amt.toFixed(2)}`);
+        showToast("✅ Deposit updated");
+      } 
+    }
+
+    function openRequestDepositModal() {
+      if (currentUser === 'admin' || currentUser === 'cook' || !currentUser) return;
+      document.getElementById('reqDepAmount').value = '';
+      document.getElementById('reqDepNote').value = '';
+      openModal('requestDepositModal');
+    }
+
+    function submitDepositRequest() {
+      if (currentUser === 'admin' || currentUser === 'cook' || !currentUser) return;
+      const amt = parseFloat(document.getElementById('reqDepAmount').value) || 0;
+      const note = (document.getElementById('reqDepNote').value || '').trim();
+      if (amt <= 0) { showToast("⚠️ Enter a valid positive amount"); return; }
+      const me = state.members.find(x => x.id.toString() === currentUser.toString());
+      if (!me) return;
+
+      const reqId = generateUniqueTimestampId(state.depositRequests);
+      const newReq = {
+        id: reqId,
+        memberId: Number(me.id),
+        memberName: me.name,
+        amount: Number(amt.toFixed(2)),
+        note,
+        date: getTodayStr(),
+        createdAt: getServerNow().toISOString(),
+        status: 'pending'
+      };
+      db.ref(`mess_data/depositRequests/${reqId}`).set(newReq);
+      closeModal('requestDepositModal');
+      showToast(`⏳ Deposit request of ৳${newReq.amount.toFixed(2)} sent for approval`);
+    }
+
+    function cancelDepositRequest(reqId) {
+      const r = state.depositRequests.find(x => Number(x.id) === Number(reqId));
+      if (!r || r.status !== 'pending') return;
+      if (currentUser !== 'admin' && Number(r.memberId) !== Number(currentUser)) return;
+      openConfirmModal(
+        "Cancel Deposit Request",
+        `Cancel your pending deposit request of ৳${Number(r.amount).toFixed(2)}?`,
+        () => {
+          const rKey = r._key !== undefined ? r._key : String(r.id);
+          let updates = { [`depositRequests/${rKey}`]: null };
+          if (rKey !== String(r.id)) updates[`depositRequests/${r.id}`] = null;
+          db.ref('mess_data').update(updates);
+          showToast("🗑️ Deposit request cancelled");
+        }
+      );
+    }
+
+    function approveDepositRequest(reqId) {
+      if (currentUser !== 'admin') return;
+      const r = state.depositRequests.find(x => Number(x.id) === Number(reqId));
+      if (!r || r.status !== 'pending') return;
+      const m = state.members.find(x => Number(x.id) === Number(r.memberId));
+      if (!m) { showToast("⚠️ Officer not found in roster"); return; }
+
+      r.status = 'approved';
+      const amt = Number((parseFloat(r.amount) || 0).toFixed(2));
+      if (amt <= 0) { showToast("⚠️ Invalid request amount"); return; }
+
+      m.deposit = Number(((parseFloat(m.deposit) || 0) + amt).toFixed(2));
+      const txId = generateUniqueTimestampId(state.transactions);
+      const todayStr = getTodayStr();
+      const newTx = {
+        id: txId,
+        date: todayStr,
+        memberId: Number(m.id),
+        amount: amt,
+        desc: r.note ? `Approved Deposit (${r.note})` : 'Approved Deposit Request'
+      };
+
+      const mKey = m._key !== undefined ? m._key : String(m.id);
+      const rKey = r._key !== undefined ? r._key : String(r.id);
+      db.ref('mess_data').update({
+        [`members/${mKey}/deposit`]: m.deposit,
+        [`transactions/${txId}`]: newTx,
+        [`depositRequests/${rKey}/status`]: 'approved',
+        [`depositRequests/${rKey}/resolvedDate`]: todayStr,
+        [`depositRequests/${rKey}/txId`]: txId
+      });
+      logAudit('Deposit Approved', `${m.name}: +৳${amt.toFixed(2)}`);
+      showToast(`✅ Approved ৳${amt.toFixed(2)} for ${m.name}`);
+    }
+
+    function rejectDepositRequest(reqId) {
+      if (currentUser !== 'admin') return;
+      const r = state.depositRequests.find(x => Number(x.id) === Number(reqId));
+      if (!r || r.status !== 'pending') return;
+      openConfirmModal(
+        "Reject Deposit Request",
+        `Reject ${r.memberName}'s deposit request of ৳${Number(r.amount).toFixed(2)}?`,
+        () => {
+          r.status = 'rejected';
+          const rKey = r._key !== undefined ? r._key : String(r.id);
+          db.ref('mess_data').update({
+            [`depositRequests/${rKey}/status`]: 'rejected',
+            [`depositRequests/${rKey}/resolvedDate`]: getTodayStr()
+          });
+          logAudit('Deposit Rejected', `${r.memberName}: ৳${Number(r.amount).toFixed(2)}`);
+          showToast("❌ Deposit request rejected");
+        }
+      );
+    }
+
+    function openMenuRequestModal() {
+      if (currentUser === 'admin' || currentUser === 'cook' || !currentUser) return;
+      const todayStr = getTodayStr();
+      const dateEl = document.getElementById('reqMenuDate');
+      dateEl.value = todayStr;
+      dateEl.min = todayStr;
+      document.getElementById('reqMenuSlot').value = 'lunch';
+      document.getElementById('reqMenuDish').value = '';
+      document.getElementById('reqMenuNote').value = '';
+      openModal('menuRequestModal');
+    }
+
+    function submitMenuRequest() {
+      if (currentUser === 'admin' || currentUser === 'cook' || !currentUser) return;
+      const todayStr = getTodayStr();
+      const date = document.getElementById('reqMenuDate').value || todayStr;
+      const mealSlot = document.getElementById('reqMenuSlot').value || 'lunch';
+      const dish = (document.getElementById('reqMenuDish').value || '').trim();
+      const note = (document.getElementById('reqMenuNote').value || '').trim();
+      if (date < todayStr) { showToast("⚠️ Please select today or a future date"); return; }
+      if (!dish) { showToast("⚠️ Please enter your preferred dish"); return; }
+
+      const me = state.members.find(x => x.id.toString() === currentUser.toString());
+      if (!me) return;
+
+      const reqId = generateUniqueTimestampId(state.menuRequests || []);
+      const newReq = {
+        id: reqId,
+        memberId: Number(me.id),
+        memberName: me.name,
+        date,
+        mealSlot,
+        dish,
+        note,
+        createdAt: getServerNow().toISOString(),
+        status: 'pending'
+      };
+      db.ref(`mess_data/menuRequests/${reqId}`).set(newReq);
+      closeModal('menuRequestModal');
+      showToast("⏳ Preferred meal request sent for Admin approval");
+    }
+
+    function cancelMenuRequest(reqId) {
+      const r = (state.menuRequests || []).find(x => Number(x.id) === Number(reqId));
+      if (!r || r.status !== 'pending') return;
+      if (currentUser !== 'admin' && Number(r.memberId) !== Number(currentUser)) return;
+      openConfirmModal(
+        "Cancel Meal Request",
+        `Cancel your preferred meal request "${r.dish}"?`,
+        () => {
+          const rKey = r._key !== undefined ? r._key : String(r.id);
+          let updates = { [`menuRequests/${rKey}`]: null };
+          if (rKey !== String(r.id)) updates[`menuRequests/${r.id}`] = null;
+          db.ref('mess_data').update(updates);
+          showToast("🗑️ Meal request cancelled");
+        }
+      );
+    }
+
+    function approveMenuRequest(reqId) {
+      if (currentUser !== 'admin') return;
+      const r = (state.menuRequests || []).find(x => Number(x.id) === Number(reqId));
+      if (!r || r.status !== 'pending') return;
+
+      r.status = 'approved';
+      const todayStr = getTodayStr();
+      const slot = ['breakfast', 'lunch', 'dinner'].includes(r.mealSlot) ? r.mealSlot : 'lunch';
+      const currentMN = state.menuNotice || {};
+      const sameDate = currentMN.date === r.date;
+      const existingDish = sameDate ? (currentMN[slot] || '').trim() : '';
+      const updatedDish = existingDish && !existingDish.toLowerCase().includes(r.dish.toLowerCase())
+        ? `${existingDish}, ${r.dish}`
+        : r.dish;
+
+      const nextMenuNotice = {
+        date: r.date,
+        notice: sameDate ? (currentMN.notice || '') : '',
+        breakfast: sameDate ? (currentMN.breakfast || '') : '',
+        lunch: sameDate ? (currentMN.lunch || '') : '',
+        dinner: sameDate ? (currentMN.dinner || '') : '',
+        [slot]: updatedDish,
+        updatedAt: getServerNow().toISOString()
+      };
+
+      const rKey = r._key !== undefined ? r._key : String(r.id);
+      db.ref('mess_data').update({
+        menuNotice: nextMenuNotice,
+        [`menuRequests/${rKey}/status`]: 'approved',
+        [`menuRequests/${rKey}/resolvedDate`]: todayStr
+      });
+      logAudit('Menu Request Approved', `${r.memberName}: ${r.dish} (${r.date} ${slot})`);
+      showToast(`✅ Approved "${r.dish}" & added to Menu Board`);
+    }
+
+    function rejectMenuRequest(reqId) {
+      if (currentUser !== 'admin') return;
+      const r = (state.menuRequests || []).find(x => Number(x.id) === Number(reqId));
+      if (!r || r.status !== 'pending') return;
+      openConfirmModal(
+        "Reject Meal Request",
+        `Reject ${r.memberName}'s meal request "${r.dish}"?`,
+        () => {
+          r.status = 'rejected';
+          const rKey = r._key !== undefined ? r._key : String(r.id);
+          db.ref('mess_data').update({
+            [`menuRequests/${rKey}/status`]: 'rejected',
+            [`menuRequests/${rKey}/resolvedDate`]: getTodayStr()
+          });
+          logAudit('Menu Request Rejected', `${r.memberName}: ${r.dish}`);
+          showToast("❌ Meal request rejected");
+        }
+      );
+    }
+
+    function clearDue(id, dueAmount) { 
+      if (currentUser !== 'admin') return;
+      const m = state.members.find(x => Number(x.id) === Number(id));
+      if (!m) return;
+      openConfirmModal(
+        "Clear Officer Due",
+        `${m.name} pays ৳${dueAmount.toFixed(2)} to clear their due balance to zero. Confirm?`,
+        () => {
+          m.deposit = (parseFloat(m.deposit) || 0) + dueAmount;
+          const txId = generateUniqueTimestampId(state.transactions);
+          const newTx = { id: txId, date: getTodayStr(), memberId: m.id, amount: Number(dueAmount.toFixed(2)), desc: 'Clear Due Payment' };
+          const mKey = m._key !== undefined ? m._key : String(m.id);
+          db.ref('mess_data').update({
+            [`members/${mKey}/deposit`]: m.deposit,
+            [`transactions/${txId}`]: newTx
+          });
+          logAudit('Due Cleared', `${m.name}: +৳${dueAmount.toFixed(2)}`);
+          showToast("✅ Due cleared");
+        }
+      );
+    }
+
+    function deleteMember(id) { 
+      if (currentUser !== 'admin') return;
+      const m = state.members.find(x => Number(x.id) === Number(id));
+      if (!m) return;
+      openConfirmModal(
+        "Remove Officer",
+        `Remove ${m.name} (ID: #${m.id}) from the active roster?`,
+        () => {
+          const mKey = m._key !== undefined ? m._key : String(m.id);
+          let updates = { [`members/${mKey}`]: null };
+          if (mKey !== String(m.id)) updates[`members/${m.id}`] = null;
+          db.ref('mess_data').update(updates);
+          logAudit('Officer Removed', `${m.name} (#${m.id})`);
+          showToast("🗑️ Officer removed");
+        }
+      );
+    }
+
+    function openEditModal(id) { 
+      const m = state.members.find(x => Number(x.id) === Number(id)); 
+      if (!m) return; 
+      document.getElementById('editMemberId').value = m.id;
+      document.getElementById('editName').value = m.name;
+      document.getElementById('editMeals').value = m.meals || 0;
+      document.getElementById('editEggs').value = m.eggs || 0; 
+      openModal('editModal'); 
+    }
+
+    function saveMemberEdit() { 
+      if (currentUser !== 'admin') return;
+      const m = state.members.find(x => Number(x.id) === Number(document.getElementById('editMemberId').value)); 
+      if (m) { 
+        m.name = (document.getElementById('editName').value || m.name).trim();
+        m.meals = Math.max(0, parseFloat(document.getElementById('editMeals').value) || 0);
+        m.eggs = Math.max(0, parseFloat(document.getElementById('editEggs').value) || 0); 
+        saveMemberToDB(m);
+        closeModal('editModal');
+        logAudit('Officer Edited', `${m.name} (#${m.id})`);
+        showToast("✅ Officer updated");
+      } 
+    }
+
+    function openDepositModal(id) { 
+      const m = state.members.find(x => Number(x.id) === Number(id)); 
+      if (!m) return; 
+      document.getElementById('adjMemberId').value = m.id;
+      document.getElementById('adjMemberName').innerText = `${m.name} (Current Deposit: ৳${(parseFloat(m.deposit)||0).toFixed(2)})`;
+      document.getElementById('adjAmount').value = ''; 
+      openModal('depositModal'); 
+    }
+
+    function addExpense() { 
+      if (currentUser !== 'admin') return;
+      const date = document.getElementById('expDate').value;
+      const cat = document.getElementById('expCategory').value;
+      const desc = document.getElementById('expDesc').value.trim();
+      const amount = parseFloat(document.getElementById('expAmount').value) || 0; 
+      if (!desc || amount <= 0) { showToast("⚠️ Enter a description and valid amount"); return; }
+      const expId = generateUniqueTimestampId(state.expenses);
+      const newExp = { id: expId, date, category: cat, desc, amount };
+      db.ref(`mess_data/expenses/${expId}`).set(newExp);
+      document.getElementById('expDesc').value = '';
+      document.getElementById('expAmount').value = ''; 
+      logAudit('Expense Added', `${desc} (${cat}): ৳${amount}`);
+      showToast("✅ Expense recorded");
+    }
+
+    function deleteExpense(id) { 
+      if (currentUser !== 'admin') return;
+      const e = state.expenses.find(x => Number(x.id) === Number(id));
+      if (!e) return;
+      openConfirmModal(
+        "Delete Expense",
+        `Delete "${e.desc}" (৳${e.amount}) on ${e.date}?`,
+        () => {
+          const eKey = e._key !== undefined ? e._key : String(e.id);
+          let updates = { [`expenses/${eKey}`]: null };
+          if (eKey !== String(e.id)) updates[`expenses/${e.id}`] = null;
+          db.ref('mess_data').update(updates);
+          logAudit('Expense Deleted', `${e.desc} (${e.date}): ৳${e.amount}`);
+          showToast("🗑️ Expense deleted");
+        }
+      );
+    }
+
+    function openEditExp(id) { 
+      const e = state.expenses.find(x => Number(x.id) === Number(id)); 
+      if (!e) return; 
+      document.getElementById('editExpId').value = e.id;
+      document.getElementById('eeDate').value = e.date;
+      document.getElementById('eeCategory').value = e.category || 'Misc';
+      document.getElementById('eeDesc').value = e.desc;
+      document.getElementById('eeAmount').value = e.amount; 
+      openModal('editExpModal'); 
+    }
+
+    function saveExpenseEdit() { 
+      if (currentUser !== 'admin') return;
+      const id = parseFloat(document.getElementById('editExpId').value); 
+      const e = state.expenses.find(x => Number(x.id) === Number(id)); 
+      if (e) { 
+        const newAmount = parseFloat(document.getElementById('eeAmount').value) || 0;
+        if (newAmount <= 0) { showToast("⚠️ Amount must be greater than zero"); return; }
+        e.date = document.getElementById('eeDate').value;
+        e.category = document.getElementById('eeCategory').value;
+        e.desc = (document.getElementById('eeDesc').value || e.desc).trim();
+        e.amount = newAmount;
+        const eKey = e._key !== undefined ? e._key : String(e.id);
+        db.ref(`mess_data/expenses/${eKey}`).set(stripInternalKeys(e));
+        closeModal('editExpModal'); 
+        logAudit('Expense Edited', `${e.desc} (${e.date}): ৳${e.amount}`);
+        showToast("✅ Expense updated");
+      } 
+    }
+
+    function deleteTx(id) { 
+      if (currentUser !== 'admin') return;
+      const t = state.transactions.find(x => Number(x.id) === Number(id)); 
+      if (!t) return;
+      openConfirmModal(
+        "Delete Transaction",
+        `Delete transaction "${t.desc}" (${t.amount >= 0 ? '+' : ''}৳${t.amount})? This will reverse the officer's deposit balance.`,
+        () => {
+          const m = state.members.find(x => Number(x.id) === Number(t.memberId)); 
+          const tKey = t._key !== undefined ? t._key : String(t.id);
+          let updates = { [`transactions/${tKey}`]: null };
+          if (tKey !== String(t.id)) updates[`transactions/${t.id}`] = null;
+          if (m) {
+            m.deposit = (parseFloat(m.deposit) || 0) - (parseFloat(t.amount) || 0);
+            const mKey = m._key !== undefined ? m._key : String(m.id);
+            updates[`members/${mKey}/deposit`] = m.deposit;
+          }
+          db.ref('mess_data').update(updates);
+          logAudit('Transaction Deleted', `${t.desc}: ৳${t.amount}`);
+          showToast("🗑️ Transaction reversed & deleted");
+        }
+      );
+    }
+
+    function openEditTx(id) { 
+      const t = state.transactions.find(x => Number(x.id) === Number(id)); 
+      if (!t) return; 
+      document.getElementById('editTxId').value = t.id;
+      document.getElementById('etDate').value = t.date;
+      document.getElementById('etDesc').value = t.desc;
+      document.getElementById('etAmount').value = t.amount; 
+      openModal('editTxModal'); 
+    }
+
+    function saveTxEdit() { 
+      if (currentUser !== 'admin') return;
+      const id = parseFloat(document.getElementById('editTxId').value); 
+      const t = state.transactions.find(x => Number(x.id) === Number(id)); 
+      if (t) { 
+        const m = state.members.find(x => Number(x.id) === Number(t.memberId)); 
+        const newAmt = parseFloat(document.getElementById('etAmount').value) || 0; 
+        const diff = newAmt - (parseFloat(t.amount) || 0);
+        t.date = document.getElementById('etDate').value;
+        t.desc = (document.getElementById('etDesc').value || t.desc).trim();
+        t.amount = newAmt; 
+        const tKey = t._key !== undefined ? t._key : String(t.id);
+        let updates = { [`transactions/${tKey}`]: stripInternalKeys(t) };
+        if (m) {
+          m.deposit = (parseFloat(m.deposit) || 0) + diff;
+          const mKey = m._key !== undefined ? m._key : String(m.id);
+          updates[`members/${mKey}/deposit`] = m.deposit;
+        }
+        db.ref('mess_data').update(updates);
+        closeModal('editTxModal'); 
+        logAudit('Transaction Edited', `${t.desc}: ৳${t.amount}`);
+        showToast("✅ Transaction updated");
+      } 
+    }
+    
+    function resetMonth() { 
+      if (currentUser !== 'admin') return;
+      const checkToday = getTodayStr();
+      if (state.monthStartDate && state.monthStartDate > checkToday) {
+        showToast(`⚠️ Already closed today. Next period starts on ${state.monthStartDate}.`);
+        return;
+      }
+      openConfirmModal(
+        "Close Month & Carry Forward",
+        "Close the current billing period through today and carry all balances forward?\n\n• Current meal rate, egg charges, and member snapshots will be archived to Ledger.\n• All officers will receive a 'Carry Forward' balance entry.\n• The new billing period will start tomorrow so today's meals are never double-billed.",
+        () => {
+          const calc = getCalculations();
+          const todayStr = getTodayStr();
+          const nextPeriodStartStr = addDaysToDateStr(todayStr, 1);
+          const closingMonthKey = (state.monthStartDate || todayStr).substring(0, 7);
+
+          let memberSnapshots = {};
+          let baseTxId = generateUniqueTimestampId(state.transactions);
+
+          state.members.forEach((m, idx) => { 
+            const mealInfo = calculateMemberMealsDetailed(m);
+            const computedMeals = mealInfo.total;
+            const mealCost = computedMeals * calc.mealRate;
+            const eggCount = calculateMemberEggs(m);
+            const eggCost = eggCount * (parseFloat(state.eggPrice) || 0);
+            const totalCost = mealCost + eggCost;
+            const finalBalance = Number(((parseFloat(m.deposit) || 0) - totalCost).toFixed(2));
+
+            memberSnapshots[m.id] = {
+              name: m.name,
+              meals: computedMeals,
+              ownMeals: mealInfo.own,
+              guestMeals: mealInfo.guest,
+              eggs: eggCount,
+              mealCost: Number(mealCost.toFixed(2)),
+              eggCost: Number(eggCost.toFixed(2)),
+              totalCost: Number(totalCost.toFixed(2)),
+              finalBalance
+            };
+
+            m.deposit = finalBalance;
+            m.meals = 0;
+            m.eggs = 0;
+            m.joinDate = nextPeriodStartStr; 
+
+            const txId = baseTxId + idx;
+            state.transactions.push({
+              _key: String(txId),
+              id: txId,
+              date: todayStr,
+              memberId: m.id,
+              amount: finalBalance,
+              desc: `Carry Forward Balance (${state.month})`
+            });
+            
+            if (m.statusEvents && m.statusEvents.length > 0) {
+              let futureEvents = m.statusEvents.filter(e => e.date > todayStr);
+              let activePastEvent = [...m.statusEvents].sort((a,b) => b.date.localeCompare(a.date)).find(e => e.date <= todayStr);
+              m.statusEvents = [];
+              if (activePastEvent && !futureEvents.some(e => e.date === nextPeriodStartStr)) {
+                m.statusEvents.push({ ...activePastEvent, date: nextPeriodStartStr });
+              }
+              m.statusEvents.push(...futureEvents);
+            }
+          }); 
+
+          if (!state.history) state.history = {};
+          state.history[closingMonthKey] = {
+            mealRate: calc.mealRate,
+            eggPrice: state.eggPrice,
+            title: state.month,
+            startDate: state.monthStartDate,
+            closedDate: todayStr,
+            memberSnapshots
+          };
+
+          state.monthStartDate = nextPeriodStartStr;
+          db.ref('mess_data').update({
+            monthStartDate: state.monthStartDate,
+            history: state.history,
+            members: buildKeyedMap(state.members),
+            transactions: buildKeyedMap(state.transactions)
+          });
+          logAudit('Month Closed', `Closed ${state.month} through ${todayStr}`);
+          showToast("✅ Month closed & archived to Ledger");
+        }
+      );
+    }
+
+    
+    function getBillHtml(m, calc) {
+      const dep = parseFloat(m.deposit) || 0;
+      const mealInfo = calculateMemberMealsDetailed(m);
+      const computedMeals = mealInfo.total;
+      const mealCost = computedMeals * calc.mealRate; 
+      const eggCount = calculateMemberEggs(m);
+      const eggCost = eggCount * (parseFloat(state.eggPrice) || 0);
+      const totalExpense = mealCost + eggCost; 
+      const balance = dep - totalExpense; 
+      const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      const mealBreakdownText = mealInfo.guest > 0 ? `${computedMeals.toFixed(1)} (${mealInfo.own.toFixed(1)}+${mealInfo.guest.toFixed(1)}G)` : `${computedMeals.toFixed(1)}`;
+
+      return `
+        <div class="bulk-bill">
+          <div>
+            <div class="receipt-center">
+              <div class="receipt-title">🛡️ OFFICERS' MESS</div>
+              <div class="receipt-subtitle">Official Mess Bill &bull; ${escapeHTML(state.month || 'Current')}</div>
+              <div class="receipt-period">Period: <strong>${escapeHTML(state.monthStartDate)}</strong> to <strong>${getTodayStr()}</strong></div>
+            </div>
+            <div class="receipt-divider"></div>
+            <div class="receipt-row"><span>Officer:</span> <strong>${escapeHTML(m.name)}</strong></div>
+            <div class="receipt-row"><span>Member ID:</span> <span>#${m.id} &bull; Issued: ${dateStr}</span></div>
+            <div class="receipt-divider"></div>
+            <div class="receipt-row"><span>Meal Rate:</span> <span>৳${calc.mealRate.toFixed(2)} / meal</span></div>
+            <div class="receipt-row"><span>Meals (${mealBreakdownText}):</span> <span>৳${mealCost.toFixed(2)}</span></div>
+            <div class="receipt-row"><span>Extra Eggs (${eggCount} &times; ৳${state.eggPrice}):</span> <span>৳${eggCost.toFixed(2)}</span></div>
+            <div class="receipt-divider"></div>
+            <div class="receipt-row"><span><strong>Total Mess Charges:</strong></span> <span><strong>৳${totalExpense.toFixed(2)}</strong></span></div>
+            <div class="receipt-row"><span>Total Deposit Paid:</span> <span>৳${dep.toFixed(2)}</span></div>
+          </div>
+          <div>
+            <div class="receipt-status-box">
+              <span>${balance >= 0 ? 'NET CREDIT / REFUND' : 'NET PAYABLE DUE'}</span>
+              <span>৳${Math.abs(balance).toFixed(2)}</span>
+            </div>
+            <div class="receipt-footer">
+              Automatically generated by Officers' Mess App &bull; No signature required
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function generateReceipt(id) {
+      const m = state.members.find(x => Number(x.id) === Number(id)); 
+      if (!m) return;
+      const calc = getCalculations(); 
+      document.getElementById('receiptContent').innerHTML = `<div class="single-bill-wrap">${getBillHtml(m, calc)}</div>`;
+      openModal('receiptModal');
+    }
+
+    function generateBulkReceipts() {
+      if (state.members.length === 0) { showToast("⚠️ No officers in the roster to print"); return; }
+      const calc = getCalculations(); let html = '<div class="bulk-grid">'; let count = 0;
+      state.members.forEach((m, index) => {
+        html += getBillHtml(m, calc); count++;
+        if (count % 6 === 0 && index !== state.members.length - 1) { html += `</div><div class="page-break"></div><div class="bulk-grid">`; }
+      });
+      html += '</div>'; document.getElementById('receiptContent').innerHTML = html; openModal('receiptModal');
+    }
+  </script>
+  
+  <script>
+    if ('serviceWorker' in navigator) { 
+      window.addEventListener('load', () => { 
+        navigator.serviceWorker.register('./sw.js').catch(() => {}); 
+      }); 
+    }
+  </script>
+</body>
+</html>
